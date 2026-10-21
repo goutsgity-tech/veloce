@@ -1,0 +1,2153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>veloce — Велосипеды ручной сборки</title>
+  <style>
+    :root {
+      --c-dark: #21262B;
+      --c-darker: #15191D;
+      --c-card: #262C33;
+      --c-gray: #A9A9A9;
+      --c-light: #F1F1F1;
+      --c-slate: #778899;
+      --c-yellow: #F5C518;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--c-dark);
+      background-color: var(--c-dark);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* БАЗОВЫЕ УТИЛИТЫ (РАБОТАЮТ НА ВСЕХ УСТРОЙСТВАХ ДАЖЕ БЕЗ ИНТЕРНЕТА) */
+    .hidden { display: none !important; }
+    .block { display: block; }
+    .flex { display: flex; }
+    .inline-flex { display: inline-flex; }
+    .grid { display: grid; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .items-baseline { align-items: baseline; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .shrink-0 { flex-shrink: 0; }
+    .w-full { width: 100%; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .fixed { position: fixed; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .uppercase { text-transform: uppercase; }
+    .lowercase { text-transform: lowercase; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .font-extrabold { font-weight: 800; }
+    .cursor-pointer { cursor: pointer; }
+    .select-none { -webkit-user-select: none; user-select: none; }
+    .pointer-events-none { pointer-events: none; }
+    .overflow-hidden { overflow: hidden; }
+
+    /* КОНТЕЙНЕР САЙТА */
+    .container-main {
+      width: 100%;
+      max-width: 1180px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    @media (min-width: 640px) {
+      .container-main { padding-left: 24px; padding-right: 24px; }
+    }
+
+    /* БЕЗОПАСНОЕ ОТОБРАЖЕНИЕ SVG НА IPHONE И ANDROID */
+    .bike-svg-render {
+      display: block;
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      overflow: visible;
+    }
+
+    /* 0. ПРЕЛОАДЕР (АВТОМАТИЧЕСКОЕ СКРЫТИЕ ЧЕРЕЗ 0.85 СЕК) */
+    #velocePreloader {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      z-index: 9999;
+      background-color: #F1F1F1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: preloaderHide 0.35s var(--ease-out) 0.85s forwards;
+    }
+    #velocePreloader.preloader-hidden {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      display: none !important;
+    }
+    @keyframes preloaderHide {
+      0% { opacity: 1; visibility: visible; }
+      99% { opacity: 0; visibility: hidden; pointer-events: none; }
+      100% { opacity: 0; visibility: hidden; pointer-events: none; z-index: -1; }
+    }
+    .preloader-box {
+      width: 72px;
+      height: 72px;
+      background: #21262B;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      box-shadow: 0 12px 28px rgba(33,38,43,0.18);
+    }
+    .preloader-title {
+      font-size: clamp(44px, 10vw, 68px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: #21262B;
+      line-height: 1;
+    }
+    .preloader-bar-track {
+      width: 170px;
+      height: 2px;
+      background: rgba(169, 169, 169, 0.4);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+    .preloader-bar-fill {
+      height: 100%;
+      background: #21262B;
+      animation: barFill 0.75s ease-out forwards;
+    }
+    @keyframes barFill { 0% { width: 0%; } 100% { width: 100%; } }
+
+    /* 1. ВЕРХНЯЯ НАВИГАЦИЯ */
+    .global-nav {
+      height: 60px;
+      background: rgba(24, 28, 32, 0.94);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      backdrop-filter: saturate(180%) blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      border-bottom: 1px solid rgba(119, 136, 153, 0.22);
+    }
+    .nav-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: #FFFFFF;
+    }
+    .brand-logo-sq {
+      width: 34px;
+      height: 34px;
+      background: #14171A;
+      border: 1px solid rgba(119, 136, 153, 0.4);
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .brand-wordmark {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: #FFFFFF;
+    }
+    .desktop-nav {
+      display: none;
+      align-items: center;
+      gap: 28px;
+    }
+    .mobile-menu-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      color: #F1F1F1;
+      cursor: pointer;
+      padding: 0;
+    }
+    @media (min-width: 768px) {
+      .desktop-nav { display: flex; }
+      .mobile-menu-btn { display: none; }
+    }
+    .nav-item {
+      font-size: 13px;
+      font-weight: 500;
+      color: #A9A9A9;
+      text-decoration: none;
+      transition: color 0.2s;
+      cursor: pointer;
+    }
+    .nav-item:hover, .nav-item.active-nav { color: #FFFFFF; }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: #F1F1F1;
+      cursor: pointer;
+      position: relative;
+      padding: 0;
+    }
+    .cart-badge {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 99px;
+      background: var(--c-yellow);
+      color: var(--c-dark);
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ПРОМО-СТРОКА */
+    .top-promo-bar {
+      background: #14171B;
+      border-bottom: 1px solid rgba(119, 136, 153, 0.2);
+      padding: 8px 14px;
+      text-align: center;
+      font-size: 12px;
+      color: #A9A9A9;
+    }
+    .top-promo-btn {
+      background: none;
+      border: none;
+      color: var(--c-yellow);
+      font-weight: 600;
+      font-size: 12px;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    /* ДИЗАЙНЕРСКИЕ ФОНЫ СЕКЦИЙ */
+    .studio-cyclorama-bg {
+      background-color: #E6EAEE;
+      background-image:
+        radial-gradient(ellipse 75% 58% at 50% 44%, rgba(255, 255, 255, 0.96) 0%, rgba(235, 240, 245, 0.7) 55%, rgba(212, 220, 228, 0.9) 100%),
+        linear-gradient(to right, rgba(119, 136, 153, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(119, 136, 153, 0.08) 1px, transparent 1px);
+      background-size: 100% 100%, 48px 48px, 48px 48px;
+    }
+    .dark-architectural-bg {
+      background-color: #1A1E23;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(119, 136, 153, 0.20) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(245, 197, 24, 0.06) 0%, transparent 42%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+    }
+    .history-atelier-bg {
+      background-color: #15191D;
+      background-image:
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(119, 136, 153, 0.18) 0%, transparent 70%);
+    }
+    .catalog-gallery-bg {
+      background-color: #E8ECEF;
+      background-image:
+        radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.9) 0%, transparent 65%),
+        radial-gradient(rgba(119, 136, 153, 0.2) 1px, transparent 1px);
+      background-size: 100% 100%, 26px 26px;
+    }
+
+    /* КАРТОЧКИ И СЕТКИ (АДАПТИВНЫЕ ПОД ТЕЛЕФОНЫ И ПК) */
+    .luxury-glass-card {
+      background: linear-gradient(160deg, rgba(42, 49, 57, 0.85) 0%, rgba(25, 30, 35, 0.95) 100%);
+      border: 1px solid rgba(119, 136, 153, 0.28);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .grid-3-cols {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 768px) {
+      .grid-3-cols { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    }
+
+    .grid-catalog {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 640px) {
+      .grid-catalog { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .grid-catalog { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    }
+
+    .grid-cfd-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media (min-width: 1024px) {
+      .grid-cfd-layout { grid-template-columns: 1.85fr 1fr; gap: 24px; }
+    }
+
+    .grid-2-cols {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 1024px) {
+      .grid-2-cols { grid-template-columns: 1fr 1fr; gap: 32px; }
+    }
+
+    .grid-modal-part {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+    @media (min-width: 768px) {
+      .grid-modal-part { grid-template-columns: 1.35fr 1fr; gap: 24px; }
+    }
+
+    /* КНОПКИ */
+    .btn-primary {
+      background: #21262B;
+      color: #F1F1F1;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 11px 22px;
+      border-radius: 9999px;
+      border: 1px solid rgba(119, 136, 153, 0.35);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    .btn-primary:hover { background: #778899; }
+
+    .btn-accent {
+      background: #F5C518;
+      color: #21262B;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 11px 22px;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .btn-accent:hover { opacity: 0.92; }
+
+    /* ГЛАВНЫЙ ПОДИУМ */
+    .hero-title {
+      font-size: clamp(36px, 8vw, 74px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      color: #21262B;
+      line-height: 1.04;
+      margin: 0;
+    }
+    .podium-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px 16px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(119, 136, 153, 0.35);
+      box-shadow: 0 6px 20px rgba(33, 38, 43, 0.06);
+      max-width: 100%;
+    }
+    .part-btn {
+      padding: 6px 13px;
+      border-radius: 999px;
+      border: none;
+      background: #E6EAEE;
+      color: #21262B;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .part-btn:hover { background: #21262B; color: #FFFFFF; }
+
+    .color-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      cursor: pointer;
+      border: 2px solid #FFFFFF;
+      padding: 0;
+      transition: transform 0.2s ease;
+    }
+    .color-dot.active {
+      outline: 2px solid #21262B;
+      outline-offset: 2px;
+      transform: scale(1.12);
+    }
+
+    /* ПЛАВНАЯ АНИМАЦИЯ ДЕТАЛЕЙ (ОПТИМИЗИРОВАННАЯ ПОД IPHONE БЕЗ РАЗМЫТИЯ GPU) */
+    .bike-part-trigger {
+      cursor: pointer;
+      transition: opacity 0.25s ease;
+    }
+    .bike-part-trigger:hover { opacity: 0.88; }
+
+    .stage-transition {
+      transition: opacity 0.32s var(--ease-out), transform 0.32s var(--ease-out);
+    }
+    .stage-exit {
+      opacity: 0 !important;
+      transform: scale(0.96) translateY(6px) !important;
+      pointer-events: none !important;
+    }
+    .stage-enter-active {
+      animation: stageEnter 0.38s var(--ease-out) forwards;
+    }
+    @keyframes stageEnter {
+      0% { opacity: 0; transform: scale(0.96) translateY(8px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .part-zoom-anim {
+      animation: partZoomIn 0.36s var(--ease-out) forwards;
+    }
+    @keyframes partZoomIn {
+      0% { opacity: 0; transform: scale(0.9) translateY(6px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes cfdFlowMove {
+      0% { stroke-dashoffset: 160; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .cfd-flow-line {
+      stroke-dasharray: 22 14;
+      animation: cfdFlowMove 2.8s linear infinite;
+    }
+    .cfd-flow-fast {
+      stroke-dasharray: 26 12;
+      animation: cfdFlowMove 1.4s linear infinite;
+    }
+
+    /* ОДНОСТРОЧНЫЙ МАНИФЕСТ БЕЗ ПЕРЕНОСА НА ВСЕХ ЭКРАНАХ */
+    .single-line-manifesto {
+      font-size: clamp(9.5px, 2.45vw, 19px);
+      font-weight: 700;
+      color: #FFFFFF;
+      white-space: nowrap;
+      line-height: 1.3;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    /* КАРТОЧКИ КАТАЛОГА */
+    .catalog-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(119, 136, 153, 0.28);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(33, 38, 43, 0.05);
+      transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.25s;
+    }
+    .catalog-card:hover {
+      border-color: #778899;
+      box-shadow: 0 20px 42px rgba(33, 38, 43, 0.12);
+      transform: translateY(-4px);
+    }
+    .catalog-card.selected-hero-card {
+      border: 2px solid #21262B;
+      box-shadow: 0 18px 38px rgba(33, 38, 43, 0.14);
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: #DCE1E6;
+      padding: 6px;
+      border-radius: 14px;
+      border: 1px solid rgba(119, 136, 153, 0.25);
+    }
+    .cat-btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      color: #21262B;
+      cursor: pointer;
+      flex: 1 1 auto;
+      text-align: center;
+    }
+    .cat-btn.active-cat {
+      background: #21262B;
+      color: #F1F1F1;
+    }
+
+    /* ПОЛЗУНКИ (КРОССБРАУЗЕРНЫЕ ДЛЯ IPHONE SAFARI И ANDROID) */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #2A313A;
+      border-radius: 99px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--c-yellow);
+      border: 3px solid #21262B;
+      cursor: pointer;
+    }
+
+    /* МОДАЛЬНЫЕ ОКНА */
+    .modal-overlay {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-box {
+      background: #21262B;
+      color: #F1F1F1;
+      border-radius: 20px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+      border: 1px solid rgba(119, 136, 153, 0.4);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(119, 136, 153, 0.4);
+      background: #161A1E;
+      color: #FFFFFF;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    .form-input::placeholder { color: #A9A9A9; }
+  </style>
+</head>
+<body>
+
+  <!-- 0. ЗАГРУЗОЧНЫЙ ЭКРАН -->
+  <div id="velocePreloader" onclick="this.classList.add('preloader-hidden')" aria-label="Загрузка veloce">
+    <div class="flex flex-col items-center justify-center select-none" style="padding: 24px;">
+      <div class="flex items-center" style="gap: 18px;">
+        <div class="preloader-box">
+          <svg viewBox="0 0 100 100" class="bike-svg-render" fill="none" stroke="#F1F1F1" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 8 40 L 44 40" />
+            <path d="M 46 48 L 10 92" />
+            <path d="M 36 24 L 66 94" />
+            <path d="M 36 24 L 63 24 C 76 24, 83 32, 83 41 C 83 50, 74 55, 62 52" />
+            <path d="M 36 94 A 42 42 0 0 1 94 64" stroke-width="7.5" />
+          </svg>
+        </div>
+        <div class="preloader-title">veloce</div>
+      </div>
+      <div class="preloader-bar-track">
+        <div class="preloader-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. ВЕРХНЯЯ НАВИГАЦИЯ -->
+  <header class="global-nav w-full">
+    <div class="container-main nav-inner select-none">
+      
+      <button onclick="toggleMobileMenu()" class="mobile-menu-btn" aria-label="Меню">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+
+      <a href="#heroSection" class="brand-link">
+        <div class="brand-logo-sq">
+          <svg viewBox="0 0 100 100" class="bike-svg-render" fill="none">
+            <rect width="100" height="100" fill="#14171A" />
+            <line x1="0" y1="39" x2="43" y2="39" stroke="#F1F1F1" stroke-width="10.5" />
+            <line x1="46" y1="48" x2="4" y2="98" stroke="#F1F1F1" stroke-width="10.5" />
+            <line x1="36" y1="24" x2="67" y2="100" stroke="#F1F1F1" stroke-width="10.5" stroke-linecap="round" />
+            <path d="M 36 24 L 63 24 C 76 24, 83 32, 83 41 C 83 50, 74 55, 62 52" stroke="#F1F1F1" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round" />
+            <polygon points="55,27 62,36 66,27" fill="#F1F1F1" />
+            <path d="M 34 100 A 44 44 0 0 1 100 66" stroke="#F1F1F1" stroke-width="10.5" />
+          </svg>
+        </div>
+        <span class="brand-wordmark">veloce</span>
+      </a>
+
+      <nav class="desktop-nav">
+        <a href="#heroSection" class="nav-item active-nav">Подиум</a>
+        <a href="#brandStory" class="nav-item">О бренде</a>
+        <a href="#brandHistory" class="nav-item">История</a>
+        <a href="#catalog" class="nav-item">Каталог</a>
+        <a href="#support" class="nav-item">Подбор рамы</a>
+      </nav>
+
+      <div class="flex items-center" style="gap: 8px;">
+        <button onclick="toggleSearchModal()" class="icon-btn" aria-label="Поиск">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path stroke-linecap="round" d="M20 20l-3.5-3.5"></path>
+          </svg>
+        </button>
+
+        <button onclick="toggleCartDrawer()" class="icon-btn" aria-label="Корзина">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12l1 13H5L6 7z"></path>
+            <path stroke-linecap="round" d="M9 7V5a3 3 0 0 1 6 0v2"></path>
+          </svg>
+          <span id="cartCountBadge" class="cart-badge">1</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- МОБИЛЬНОЕ МЕНЮ -->
+  <div id="mobileMenuDrawer" class="hidden" style="position:fixed; inset:0; z-index:90;">
+    <div onclick="toggleMobileMenu()" style="position:absolute; inset:0; background:rgba(0,0,0,0.65);"></div>
+    <div style="position:absolute; left:0; top:0; bottom:0; width:80%; max-width:300px; background:#21262B; color:#F1F1F1; padding:20px; display:flex; flex-direction:column; justify-content:space-between; border-right:1px solid rgba(119,136,153,0.3);">
+      <div>
+        <div class="flex items-center justify-between" style="padding-bottom:14px; border-bottom:1px solid rgba(119,136,153,0.25);">
+          <span style="font-size:22px; font-weight:700; color:#fff;">veloce</span>
+          <button onclick="toggleMobileMenu()" style="width:32px; height:32px; border-radius:99px; background:#2A3138; color:#fff; border:none; cursor:pointer;">✕</button>
+        </div>
+        <div class="flex flex-col" style="padding-top:14px; gap:4px;">
+          <a href="#heroSection" onclick="toggleMobileMenu()" style="padding:10px 0; color:#F1F1F1; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.08);">Подиум</a>
+          <a href="#brandStory" onclick="toggleMobileMenu()" style="padding:10px 0; color:#F1F1F1; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.08);">О бренде</a>
+          <a href="#brandHistory" onclick="toggleMobileMenu()" style="padding:10px 0; color:#F1F1F1; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.08);">История</a>
+          <a href="#catalog" onclick="toggleMobileMenu()" style="padding:10px 0; color:#F1F1F1; text-decoration:none; border-bottom:1px solid rgba(255,255,255,0.08);">Каталог</a>
+          <a href="#support" onclick="toggleMobileMenu()" style="padding:10px 0; color:#F5C518; text-decoration:none; font-weight:600;">Подбор рамы</a>
+        </div>
+      </div>
+      <button onclick="toggleMobileMenu(); openTradeInModal();" class="btn-accent w-full">Trade-In до −650 €</button>
+    </div>
+  </div>
+
+  <!-- ИНФОРМАЦИОННАЯ СТРОКА -->
+  <div class="top-promo-bar">
+    <span>Рассрочка 0 % на 24 мес. и зачёт старого велосипеда по программе</span>
+    <button onclick="openTradeInModal()" class="top-promo-btn">Trade‑In (до −650 €)</button>
+  </div>
+
+  <!-- 2. ГЛАВНЫЙ ПОДИУМ -->
+  <main id="heroSection" class="studio-cyclorama-bg relative w-full overflow-hidden" style="padding: 32px 0 44px; border-bottom: 1px solid rgba(119,136,153,0.35);">
+    
+    <!-- Мягкое радиальное свечение (без тяжелого GPU filter:blur для стабильности на iPhone) -->
+    <div id="heroAmbientSpotlight" class="pointer-events-none" style="position:absolute; inset:0; background: radial-gradient(circle at 50% 48%, rgba(119,136,153,0.28) 0%, transparent 62%);"></div>
+
+    <div class="container-main relative" style="z-index: 10;">
+      
+      <div class="text-center" style="margin-bottom: 18px;">
+        <div class="inline-flex items-center justify-center uppercase font-semibold" style="gap:8px; font-size:11px; letter-spacing:0.1em; background:rgba(255,255,255,0.82); padding:5px 14px; border-radius:99px; border:1px solid rgba(119,136,153,0.3); margin-bottom:10px; color:#21262B;">
+          <span id="heroCategoryBadge">Шоссе</span>
+          <span style="width:4px; height:4px; border-radius:99px; background:#778899;"></span>
+          <span id="heroBikeSubtitle">6,8 кг</span>
+        </div>
+        <h1 id="heroBikeTitle" class="hero-title">Veloce Duo</h1>
+      </div>
+
+      <!-- Панель выбора оттенка и узлов -->
+      <div class="flex justify-center" style="margin-bottom: 12px;">
+        <div id="colorToolbar" class="podium-toolbar stage-transition">
+          <div class="flex items-center" style="gap: 8px;">
+            <div id="heroColorDots" class="flex items-center" style="gap: 7px;"></div>
+            <span id="selectedColorLabel" style="font-size: 12px; font-weight: 700; color: #21262B; margin-left: 4px;">Сланец</span>
+          </div>
+          <div style="width: 1px; height: 16px; background: rgba(169,169,169,0.6);"></div>
+          <div class="flex items-center" style="gap: 6px;">
+            <button onclick="togglePartView('frame')" class="part-btn">Рама</button>
+            <button onclick="togglePartView('wheel')" class="part-btn">Колёса</button>
+            <button onclick="togglePartView('drivetrain')" class="part-btn">Привод</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Сцена с крупным велосипедом -->
+      <div style="width: 100%; max-width: 1020px; margin: 0 auto; padding: 6px 0;">
+        
+        <div id="fullBikeContainer" class="stage-transition w-full block"></div>
+
+        <!-- Изолированный просмотр узла -->
+        <div id="isolatedPartContainer" class="stage-transition hidden" style="width:100%; max-width:900px; margin:0 auto; background:#21262B; color:#F1F1F1; border:1px solid rgba(119,136,153,0.45); border-radius:24px; padding:18px; box-shadow: 0 24px 50px rgba(0,0,0,0.28);">
+          <div class="grid-modal-part">
+            <div style="background: linear-gradient(180deg, #F1F3F6 0%, #DCE2E8 100%); border-radius: 16px; padding: 16px; position: relative; min-height: 240px; display: flex; flex-direction: column; justify-content: center;">
+              <div class="flex items-center justify-between" style="position:absolute; top:12px; left:12px; right:12px; z-index:10;">
+                <div class="inline-flex" style="background:#21262B; padding:4px; border-radius:99px; gap:4px;">
+                  <button onclick="switchPartInsideModal('frame')" id="tabPart-frame" style="padding:5px 12px; border-radius:99px; font-size:11px; border:none; cursor:pointer;">Рама</button>
+                  <button onclick="switchPartInsideModal('wheel')" id="tabPart-wheel" style="padding:5px 12px; border-radius:99px; font-size:11px; border:none; cursor:pointer;">Колёса</button>
+                  <button onclick="switchPartInsideModal('drivetrain')" id="tabPart-drivetrain" style="padding:5px 12px; border-radius:99px; font-size:11px; border:none; cursor:pointer;">Привод</button>
+                </div>
+                <button onclick="resetToFullBike()" style="width:30px; height:30px; border-radius:99px; background:#21262B; color:#fff; border:none; font-weight:700; cursor:pointer;">✕</button>
+              </div>
+              <div id="isolatedPartSvgWrapper" style="padding-top: 38px; width: 100%;"></div>
+            </div>
+
+            <div style="padding: 6px;">
+              <span id="specTag" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#F5C518;">Спецификация узла</span>
+              <h3 id="specTitle" style="font-size:20px; font-weight:700; color:#fff; margin: 6px 0 2px;">Колёса</h3>
+              <p id="specBikeName" style="font-size:12px; color:#A9A9A9; margin:0 0 14px;">Модель</p>
+              <div id="specList" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; font-size:12.5px;"></div>
+              <button onclick="resetToFullBike()" class="btn-accent w-full" style="margin-top: 18px;">← Назад к велосипеду</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-center" style="font-size:12px; color:#586775; margin: 6px 0 18px;">Нажмите на раму, колесо или систему шатунов для плавного приближения узла</p>
+
+      <!-- Нижняя капсула цены и заказа -->
+      <div class="flex justify-center">
+        <div class="inline-flex items-center flex-wrap justify-center" style="background:rgba(255,255,255,0.92); border:1px solid rgba(119,136,153,0.4); border-radius:999px; padding:7px 8px 7px 20px; gap:14px; box-shadow: 0 10px 28px rgba(33,38,43,0.1);">
+          <div style="font-size:13px; color:#21262B;">
+            <span style="color:#586775;">От <strong id="heroMonthlyPrice" style="color:#21262B;">97,46 €/мес.</strong> или </span>
+            <strong id="heroTotalPrice" style="font-weight:800;">2 339 €</strong>
+          </div>
+          <button onclick="openPreorderForCurrentHero()" class="btn-primary">Оформить заказ</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 3. О БРЕНДЕ + АЭРОДИНАМИЧЕСКИЙ ПРОФИЛЬ VELOCE DUO -->
+  <section id="brandStory" class="dark-architectural-bg" style="color:#F1F1F1; padding: 64px 0; border-bottom: 1px solid rgba(119,136,153,0.25);">
+    <div class="container-main">
+      
+      <div style="max-width: 720px; margin-bottom: 36px;">
+        <div class="inline-flex items-center uppercase font-semibold" style="gap:8px; font-size:11px; letter-spacing:0.12em; color:#F5C518; margin-bottom:8px;">
+          <span style="width:7px; height:7px; border-radius:99px; background:#F5C518;"></span>
+          <span>Инженерная философия Veloce</span>
+        </div>
+        <h2 style="font-size: clamp(24px, 4vw, 38px); font-weight:700; color:#fff; margin:0; line-height:1.2;">
+          Карбоновые велосипеды, в которых малый вес сочетается с комфортом на обычных дорогах.
+        </h2>
+      </div>
+
+      <div class="grid-3-cols">
+        <div class="luxury-glass-card relative overflow-hidden" style="padding: 24px;">
+          <div style="font-size:24px; font-weight:800; color:#F5C518; margin-bottom:10px;">5,9 — 6,8 кг</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Вдвое легче стандартных моделей</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            Низкий вес ощущается с первых метров: велосипед быстро набирает ход со светофора, не требует усилий на затяжных подъёмах и легко переносится одной рукой по лестнице.
+          </p>
+        </div>
+
+        <div class="luxury-glass-card relative overflow-hidden" style="padding: 24px;">
+          <div style="font-size:24px; font-weight:800; color:#fff; margin-bottom:10px;">Torayca T1100G</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Гашение дорожных вибраций</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            В отличие от жёстких алюминиевых рам, многослойное углеволокно работает как упругий элемент — оно сглаживает мелкую тряску от трещин асфальта, брусчатки и гравия.
+          </p>
+        </div>
+
+        <div class="luxury-glass-card relative overflow-hidden" style="padding: 24px;">
+          <div style="font-size:24px; font-weight:800; color:#fff; margin-bottom:10px;">28c — 42c</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Адаптация под асфальт или грунт</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            Все тросы полностью скрыты внутри руля и рамы, а поворотные вставки Flip‑Chip в дропаутах позволяют устанавливать как шоссейные слики, так и широкие покрышки для лесных дорог.
+          </p>
+        </div>
+      </div>
+
+      <!-- СТЕНД АЭРОДИНАМИЧЕСКОГО ПРОФИЛЯ VELOCE DUO -->
+      <div class="luxury-glass-card" style="margin-top: 32px; padding: 24px;">
+        <div class="flex flex-wrap items-center justify-between" style="gap:16px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.1);">
+          <div>
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:#778899; margin-bottom:4px;">
+              Аэродинамическая лаборатория • <span style="color:#F5C518;">Профиль NACA 0024 Kamm-Tail</span>
+            </div>
+            <h3 style="font-size: clamp(18px, 3vw, 24px); font-weight:700; color:#fff; margin:0;">Аэродинамический профиль Veloce Duo</h3>
+            <p style="font-size:12.5px; color:#A9A9A9; margin:4px 0 0;">Плавное обтекание усечённых карбоновых труб и интегрированного кокпита без завихрений встречного потока</p>
+          </div>
+
+          <div class="inline-flex" style="background:#14181C; padding:4px; border-radius:99px; border:1px solid rgba(119,136,153,0.3);">
+            <button onclick="setWindSpeed('normal')" id="windBtnNormal" style="padding:6px 14px; border-radius:99px; font-size:12px; font-weight:700; background:#778899; color:#fff; border:none; cursor:pointer;">Поток 45 км/ч</button>
+            <button onclick="setWindSpeed('fast')" id="windBtnFast" style="padding:6px 14px; border-radius:99px; font-size:12px; font-weight:500; background:transparent; color:#A9A9A9; border:none; cursor:pointer;">Спринт 65 км/ч</button>
+          </div>
+        </div>
+
+        <div class="grid-cfd-layout" style="padding-top: 20px;">
+          
+          <!-- Слева: Чистый велосипед в аэродинамическом потоке -->
+          <div style="background:#12161A; border-radius:16px; padding:16px; border:1px solid rgba(119,136,153,0.25); display:flex; flex-direction:column; justify-content:space-between;">
+            <div class="flex items-center justify-between" style="font-size:11px; color:#778899; margin-bottom:8px;">
+              <span>ЛАМИНАРНЫЙ ПОТОК CFD</span>
+              <span id="windTunnelSavingBadge" style="color:#F5C518; font-weight:700;">Сопротивление: CdA 0.198 м²</span>
+            </div>
+            <div id="cfdWindTunnelWrapper" class="w-full block"></div>
+          </div>
+
+          <!-- Справа: 2 карточки (разрез трубы NACA + скрытая интеграция ICR) -->
+          <div class="flex flex-col justify-between" style="gap: 16px;">
+            
+            <div style="background:#161B20; border-radius:16px; padding:18px; border:1px solid rgba(119,136,153,0.25); flex:1;">
+              <div class="flex items-center justify-between" style="font-size:11px; font-weight:700; margin-bottom:8px;">
+                <span style="color:#778899; text-transform:uppercase;">Сечение нижней трубы</span>
+                <span style="color:#F5C518;">−18 Вт на 45 км/ч</span>
+              </div>
+              <svg viewBox="0 0 280 86" class="bike-svg-render" style="max-height:76px; margin:8px 0;" fill="none">
+                <path d="M 8 18 Q 115 2, 268 24" stroke="#778899" stroke-width="1.5" class="cfd-flow-line" />
+                <path d="M 8 68 Q 115 84, 268 62" stroke="#778899" stroke-width="1.5" class="cfd-flow-line" />
+                <path d="M 185 25 L 252 43 L 185 61" stroke="#A9A9A9" stroke-width="1.2" stroke-dasharray="3 3" />
+                <path d="M 32 43 C 32 18, 108 16, 185 25 L 185 61 C 108 70, 32 68, 32 43 Z" fill="#21262B" stroke="#F1F1F1" stroke-width="2" />
+                <circle cx="62" cy="37" r="4.5" fill="#181C20" stroke="#778899" stroke-width="1.5" />
+                <circle cx="62" cy="49" r="4.5" fill="#181C20" stroke="#F5C518" stroke-width="1.5" />
+                <text x="115" y="46" fill="#A9A9A9" font-size="9" font-weight="700" letter-spacing="1">NACA 0024</text>
+              </svg>
+              <p style="font-size:12px; color:#A9A9A9; margin:0; line-height:1.5;">
+                Усечённый хвост трубы <strong style="color:#fff;">Kamm-Tail</strong> сохраняет обтекаемость длинного крыла, но снижает вес рамы и парусность при боковом ветре.
+              </p>
+            </div>
+
+            <div style="background:#161B20; border-radius:16px; padding:18px; border:1px solid rgba(119,136,153,0.25); flex:1;">
+              <div class="flex items-center justify-between" style="font-size:11px; font-weight:700; margin-bottom:8px;">
+                <span style="color:#778899; text-transform:uppercase;">Скрытый кокпит ICR</span>
+                <span style="color:#fff;">0 внешних тросов</span>
+              </div>
+              <svg viewBox="0 0 280 76" class="bike-svg-render" style="max-height:68px; margin:8px 0;" fill="none">
+                <path d="M 25 22 L 155 22 C 175 22, 185 32, 185 48 L 185 72" stroke="#283038" stroke-width="18" stroke-linecap="round" />
+                <path d="M 25 22 L 155 22 C 175 22, 185 32, 185 48 L 185 72" stroke="#778899" stroke-width="1.8" stroke-dasharray="5 3" />
+                <path d="M 25 26 L 152 26 C 170 26, 179 35, 179 48 L 179 72" stroke="#F5C518" stroke-width="1.8" />
+                <circle cx="182" cy="52" r="14" stroke="#F1F1F1" stroke-width="1.5" opacity="0.6" />
+                <text x="45" y="54" fill="#A9A9A9" font-size="9" font-weight="700" letter-spacing="1">ВНУТРЕННИЙ КАНАЛ ICR</text>
+              </svg>
+              <p style="font-size:12px; color:#A9A9A9; margin:0; line-height:1.5;">
+                Гидролинии и проводка <strong style="color:#fff;">Di2</strong> проходят внутри карбонового руля сквозь керамические подшипники рулевой колонки.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3.2 ИСТОРИЯ БРЕНДА -->
+  <section id="brandHistory" class="history-atelier-bg" style="color:#F1F1F1; padding: 64px 0; border-bottom: 1px solid rgba(119,136,153,0.25);">
+    <div class="container-main">
+      
+      <div style="margin-bottom: 32px;">
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#778899; margin-bottom:6px;">История ателье</div>
+        <h2 style="font-size: clamp(24px, 4vw, 38px); font-weight:700; color:#fff; margin:0;">Три этапа развития Veloce</h2>
+      </div>
+
+      <div class="grid-3-cols">
+        <div class="luxury-glass-card" style="padding: 24px;">
+          <div style="font-size:12px; font-weight:600; color:#778899;">Турин</div>
+          <div style="font-size:32px; font-weight:800; color:#fff; margin:4px 0 10px;">1993</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Основание мастерской</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            Первые рамы ручной работы создавались для трековых соревнований в Северной Италии, где жёсткость кареточного узла и низкая масса определяли результат на финише.
+          </p>
+        </div>
+
+        <div class="luxury-glass-card" style="padding: 24px;">
+          <div style="font-size:12px; font-weight:600; color:#778899;">Милан</div>
+          <div style="font-size:32px; font-weight:800; color:#fff; margin:4px 0 10px;">2012</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Переход на цельный монокок</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            Отказ от трубных соединений в пользу автоклавного формования под высоким давлением позволил снизить массу шоссейного фреймсета до 545 граммов.
+          </p>
+        </div>
+
+        <div class="luxury-glass-card" style="padding: 24px; border-color: rgba(245,197,24,0.4);">
+          <div style="font-size:12px; font-weight:600; color:#F5C518;">Современная серия</div>
+          <div style="font-size:32px; font-weight:800; color:#F5C518; margin:4px 0 10px;">2026</div>
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0 0 8px;">Платформа Veloce Duo</h3>
+          <p style="font-size:13px; color:#A9A9A9; margin:0; line-height:1.6;">
+            Объединение шоссейной динамики и увеличенных зазоров под гравийные покрышки в едином шасси со скрытой проводкой и беспроводной трансмиссией.
+          </p>
+        </div>
+      </div>
+
+      <!-- СЕРВИСНЫЙ БЛОК С ОДНОСТРОЧНОЙ НАДПИСЬЮ БЕЗ ПЕРЕНОСА -->
+      <div class="luxury-glass-card flex flex-wrap items-center justify-between" style="margin-top: 32px; padding: 24px; gap: 18px;">
+        <div style="max-width: 100%; overflow: hidden;">
+          <h3 class="single-line-manifesto">
+            Наше сотрудничество не завершается покупкой — с этого момента оно начинается.
+          </h3>
+          <p style="font-size:13px; color:#A9A9A9; margin: 8px 0 0; max-width: 680px;">
+            Каждый велосипед проходит предварительную сборку и настройку под ваш рост перед отправкой. Первое техническое обслуживание проводится бесплатно.
+          </p>
+        </div>
+        <button onclick="openServiceModal('Консультация инженера Veloce')" class="btn-primary">Связаться с мастерской</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. КАТАЛОГ МОДЕЛЕЙ -->
+  <section id="catalog" class="catalog-gallery-bg" style="padding: 64px 0; border-bottom: 1px solid rgba(119,136,153,0.3);">
+    <div class="container-main">
+      
+      <div class="flex flex-wrap items-center justify-between" style="gap: 16px; margin-bottom: 28px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#586775; margin-bottom:4px;">Модельный ряд 2026</div>
+          <h2 style="font-size: clamp(24px, 4vw, 38px); font-weight:800; color:#21262B; margin:0;">Каталог велосипедов</h2>
+        </div>
+
+        <div class="filter-bar" id="categoryFilters">
+          <button onclick="filterCatalog('all')" data-cat="all" class="cat-btn active-cat">Все (6)</button>
+          <button onclick="filterCatalog('Шоссе')" data-cat="Шоссе" class="cat-btn">Шоссе</button>
+          <button onclick="filterCatalog('Грэвел')" data-cat="Грэвел" class="cat-btn">Грэвел</button>
+          <button onclick="filterCatalog('Городские')" data-cat="Городские" class="cat-btn">Городские</button>
+          <button onclick="filterCatalog('Трек')" data-cat="Трек" class="cat-btn">Трек</button>
+        </div>
+      </div>
+
+      <div id="productGrid" class="grid-catalog"></div>
+    </div>
+  </section>
+
+  <!-- 5. КАЛЬКУЛЯТОР РАЗМЕРА РАМЫ -->
+  <section id="support" class="dark-architectural-bg" style="color:#F1F1F1; padding: 64px 0;">
+    <div class="container-main">
+      <div class="flex flex-wrap items-center justify-between" style="gap: 16px; margin-bottom: 28px;">
+        <div>
+          <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:#778899; margin-bottom:4px;">Bike Fit</div>
+          <h2 style="font-size: clamp(22px, 3.5vw, 34px); font-weight:700; color:#fff; margin:0;">Расчёт ростовки и давления в шинах</h2>
+        </div>
+        <button onclick="openServiceModal('Запись на ТО и настройку посадки')" class="btn-accent">Записаться в сервис</button>
+      </div>
+
+      <div class="luxury-glass-card" style="padding: 24px;">
+        <div class="grid-2-cols items-center">
+          <div>
+            <div class="flex items-center justify-between" style="margin-bottom: 14px;">
+              <span style="font-size:14px; font-weight:700; color:#fff;">Параметры райдера</span>
+              <span id="fitSavedIndicator" style="font-size:12px; color:#A9A9A9;">Автосохранение активно</span>
+            </div>
+
+            <div style="background:#161A1E; padding:16px; border-radius:14px; border:1px solid rgba(119,136,153,0.25); margin-bottom:14px;">
+              <div class="flex items-center justify-between" style="font-size:13px; margin-bottom:10px;">
+                <span style="color:#A9A9A9;">Ваш рост</span>
+                <strong id="fitHeightVal" style="color:#fff;">178 см</strong>
+              </div>
+              <input id="fitHeightInput" type="range" min="150" max="205" value="178" oninput="calculateBikeFit(true)">
+            </div>
+
+            <div style="background:#161A1E; padding:16px; border-radius:14px; border:1px solid rgba(119,136,153,0.25);">
+              <div class="flex items-center justify-between" style="font-size:13px; margin-bottom:10px;">
+                <span style="color:#A9A9A9;">Ваш вес</span>
+                <strong id="fitWeightVal" style="color:#fff;">74 кг</strong>
+              </div>
+              <input id="fitWeightInput" type="range" min="45" max="115" value="74" oninput="calculateBikeFit(true)">
+            </div>
+          </div>
+
+          <div style="background:#14181C; border-radius:18px; padding:22px; border:1px solid rgba(119,136,153,0.3);">
+            <div class="flex items-baseline justify-between" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:14px; margin-bottom:16px;">
+              <div>
+                <div style="font-size:12px; color:#A9A9A9;">Рекомендуемый размер рамы</div>
+                <div id="fitResultSize" style="font-size:30px; font-weight:800; color:#F5C518; margin-top:2px;">M (54)</div>
+              </div>
+              <span id="fitHeightRangeHint" style="font-size:12px; color:#A9A9A9;">172–180 см</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+              <div style="background:#1D2228; border-radius:12px; padding:14px; border:1px solid rgba(119,136,153,0.2);">
+                <span style="font-size:11px; color:#A9A9A9; display:block;">Высота седла</span>
+                <strong id="fitResultSaddle" style="font-size:17px; color:#fff; display:block; margin-top:4px;">73.9 см</strong>
+              </div>
+              <div style="background:#1D2228; border-radius:12px; padding:14px; border:1px solid rgba(119,136,153,0.2);">
+                <span style="font-size:11px; color:#A9A9A9; display:block;">Давление в шинах</span>
+                <strong id="fitResultPressureBar" style="font-size:17px; color:#fff; display:block; margin-top:4px;">5.4 Бар</strong>
+              </div>
+            </div>
+
+            <button onclick="openPreorderForCurrentHero()" class="btn-accent w-full">Оформить заказ в этом размере</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ПОДВАЛ -->
+  <footer style="background:#121518; color:#A9A9A9; font-size:12px; border-top:1px solid rgba(119,136,153,0.25); padding: 28px 0;">
+    <div class="container-main flex flex-wrap items-center justify-between" style="gap: 16px;">
+      <div>
+        <strong style="font-size:16px; color:#fff;">veloce</strong> • Велосипеды ручной сборки с 1993 года
+      </div>
+      <div class="flex items-center" style="gap: 18px;">
+        <button onclick="resetSavedStorage()" style="background:none; border:none; color:#A9A9A9; text-decoration:underline; cursor:pointer; font-size:12px;">Сбросить данные</button>
+        <button onclick="window.scrollTo({top:0, behavior:'smooth'})" style="background:none; border:none; color:#fff; font-weight:600; cursor:pointer; font-size:12px;">Наверх ↑</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- МОДАЛЬНЫЕ ОКНА -->
+  <div id="serviceModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button onclick="closeServiceModal()" style="position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:99px; background:#2A3138; color:#fff; border:none; cursor:pointer;">✕</button>
+      <h3 id="serviceModalTitle" style="font-size:18px; font-weight:700; color:#fff; margin:0 0 16px;">Запись в мастерскую</h3>
+      <form onsubmit="submitServiceBooking(event)">
+        <input type="text" required placeholder="Ваше имя" class="form-input">
+        <input type="tel" required placeholder="Телефон" class="form-input">
+        <button type="submit" class="btn-accent w-full">Отправить заявку</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="preorderModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button onclick="closePreorderModal()" style="position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:99px; background:#2A3138; color:#fff; border:none; cursor:pointer;">✕</button>
+      <h3 id="modalBikeTitle" style="font-size:18px; font-weight:700; color:#fff; margin:0 0 4px;">Оформление заказа</h3>
+      <p id="modalBikeFitNote" style="font-size:12px; color:#A9A9A9; margin:0 0 16px;">Размер рамы: M (54)</p>
+      <form onsubmit="submitPreorder(event)">
+        <input type="text" required placeholder="Ваше имя" class="form-input">
+        <input type="text" required placeholder="Телефон или Email" class="form-input">
+        <button type="submit" class="btn-accent w-full">Подтвердить заказ</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="tradeInModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <button onclick="closeTradeInModal()" style="position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:99px; background:#2A3138; color:#fff; border:none; cursor:pointer;">✕</button>
+      <h3 style="font-size:18px; font-weight:700; color:#fff; margin:0 0 16px;">Зачёт велосипеда по Trade‑In</h3>
+      <select id="tradeBikeType" onchange="calcTradeIn()" class="form-input">
+        <option value="650">Карбоновый шоссейный / грэвел (−650 €)</option>
+        <option value="420">Алюминиевый шоссейный / грэвел (−420 €)</option>
+        <option value="320">Городской велосипед (−320 €)</option>
+      </select>
+      <div class="flex items-center justify-between" style="padding:14px; border-radius:12px; background:#161A1E; border:1px solid rgba(119,136,153,0.3); margin-bottom:14px;">
+        <span style="font-size:12px; color:#A9A9A9;">Ваша скидка:</span>
+        <strong id="tradeDiscountValue" style="font-size:20px; font-weight:800; color:#F5C518;">− 650 €</strong>
+      </div>
+      <button onclick="applyTradeInDiscount()" class="btn-accent w-full">Применить скидку</button>
+    </div>
+  </div>
+
+  <!-- КОРЗИНА -->
+  <div id="cartDrawer" class="hidden" style="position:fixed; inset:0; z-index:85;">
+    <div onclick="toggleCartDrawer()" style="position:absolute; inset:0; background:rgba(0,0,0,0.65);"></div>
+    <div style="position:absolute; right:0; top:0; bottom:0; width:100%; max-width:360px; background:#21262B; color:#F1F1F1; padding:22px; display:flex; flex-direction:column; justify-content:space-between; border-left:1px solid rgba(119,136,153,0.3);">
+      <div>
+        <div class="flex items-center justify-between" style="padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.1);">
+          <h3 style="font-size:16px; font-weight:700; color:#fff; margin:0;">Корзина</h3>
+          <button onclick="toggleCartDrawer()" style="width:30px; height:30px; border-radius:99px; background:#2A3138; color:#fff; border:none; cursor:pointer;">✕</button>
+        </div>
+        <div id="cartItemsList" style="padding:16px 0; max-height:60vh; overflow-y:auto;"></div>
+      </div>
+      <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+        <div class="flex items-center justify-between" style="margin-bottom:12px; font-size:14px;">
+          <span style="color:#A9A9A9;">Итого:</span>
+          <strong id="cartTotalSum" style="font-size:18px; color:#F5C518;">0 €</strong>
+        </div>
+        <button onclick="checkoutCart()" class="btn-accent w-full">Оформить заказ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ПОИСК -->
+  <div id="searchModal" class="modal-overlay hidden" style="align-items:flex-start; padding-top:64px;">
+    <div class="modal-box" style="max-width:500px;">
+      <div class="flex items-center justify-between" style="gap:10px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+        <input id="searchInput" oninput="runSearch(this.value)" type="text" placeholder="Поиск модели..." style="width:100%; background:transparent; border:none; color:#fff; font-size:14px; outline:none;">
+        <button onclick="toggleSearchModal()" style="background:none; border:none; color:#A9A9A9; font-size:12px; cursor:pointer;">Закрыть</button>
+      </div>
+      <div id="searchResults" style="padding-top:10px; max-height:240px; overflow-y:auto; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <!-- УВЕДОМЛЕНИЯ -->
+  <div id="toastBanner" class="hidden" style="position:fixed; bottom:20px; right:20px; z-index:95; background:#181C20; color:#fff; font-size:12px; padding:12px 16px; border-radius:12px; border:1px solid rgba(119,136,153,0.4); box-shadow:0 12px 30px rgba(0,0,0,0.4); align-items:center; gap:10px;">
+    <span style="width:8px; height:8px; border-radius:99px; background:#F5C518; display:inline-block;"></span>
+    <span id="toastText">Готово</span>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      CART: 'veloce_store_cart_v11',
+      HERO_BIKE_ID: 'veloce_store_hero_bike_v11',
+      HERO_COLOR_IDX: 'veloce_store_color_idx_v11',
+      BIKE_FIT: 'veloce_store_bike_fit_v11',
+      TRADE_IN: 'veloce_store_trade_in_v11',
+      CAT_FILTER: 'veloce_store_cat_filter_v11'
+    };
+
+    const VALID_CATEGORIES = ['all', 'Шоссе', 'Грэвел', 'Городские', 'Трек'];
+
+    const BIKES = [
+      {
+        id: 'veloce-duo',
+        name: 'Veloce Duo',
+        category: 'Шоссе',
+        type: 'road',
+        price: 2339,
+        weight: '6,8 кг',
+        rimDepth: 25,
+        tanwall: true,
+        desc: 'Карбоновый шоссейник с изменяемой геометрией дропаутов Flip-Chip, колёсами 60 мм и электронной группой 2×12 Di2.',
+        colors: [
+          { name: 'Сланец', c1: '#9eb0c2', c2: '#778899', c3: '#4a5764' },
+          { name: 'Антрацит', c1: '#434c56', c2: '#21262B', c3: '#111417' },
+          { name: 'Серебро', c1: '#d8dcdf', c2: '#A9A9A9', c3: '#73787d' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Veloce Aero 60 Carbon', items: [['Высота профиля', '60 мм, бескамерные'], ['Покрышки', 'Vittoria Corsa Pro 700×28c'], ['Тормозные роторы', '160 / 140 мм Centerlock'], ['Вес пары', '1 290 г']] },
+          frame: { tag: 'Фреймсет', title: 'Монокок Veloce Duo', items: [['Материал', 'Углеволокно Torayca T1100G'], ['Вес рамы', '680 г (размер M)'], ['Проводка', 'Полностью внутренняя ICR'], ['Зазор покрышек', 'От 28 до 42 мм']] },
+          drivetrain: { tag: 'Трансмиссия', title: 'Электронная группа 2×12 Di2', items: [['Переключение', 'Беспроводное, 24 передачи'], ['Звёзды системы', '52/36T'], ['Кассета', '11–30T']] }
+        }
+      },
+      {
+        id: 'veloce-slr-climber',
+        name: 'Veloce Aethos SLR',
+        category: 'Шоссе',
+        type: 'road',
+        price: 2590,
+        weight: '5,9 кг',
+        rimDepth: 16,
+        tanwall: true,
+        desc: 'Облегчённая модель для горного рельефа с рамой весом 545 г и низкопрофильным карбоновым вилсетом 35 мм.',
+        colors: [
+          { name: 'Светлый', c1: '#ffffff', c2: '#DFE4E8', c3: '#9CA3AA' },
+          { name: 'Сланец', c1: '#9eb0c2', c2: '#778899', c3: '#4a5764' },
+          { name: 'Антрацит', c1: '#434c56', c2: '#21262B', c3: '#111417' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Veloce Alpinist 35', items: [['Профиль', '35 мм Carbon'], ['Вес пары', '1 080 г']] },
+          frame: { tag: 'Фреймсет', title: 'Рама Veloce Aethos SLR', items: [['Вес рамы', '545 г'], ['Каретка', 'Резьбовая T47']] },
+          drivetrain: { tag: 'Трансмиссия', title: 'Группа 2×12 Compact', items: [['Система', '50/34T'], ['Кассета', '11–34T']] }
+        }
+      },
+      {
+        id: 'veloce-terra-x',
+        name: 'Veloce Terra Duo X',
+        category: 'Грэвел',
+        type: 'gravel',
+        price: 2190,
+        weight: '7,6 кг',
+        rimDepth: 19,
+        tanwall: true,
+        desc: 'Гравийный велосипед с бескамерными покрышками 40 мм для асфальта, парковых маршрутов и укатанного грунта.',
+        colors: [
+          { name: 'Серебро', c1: '#d8dcdf', c2: '#A9A9A9', c3: '#73787d' },
+          { name: 'Сланец', c1: '#9eb0c2', c2: '#778899', c3: '#4a5764' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Veloce Terra G35', items: [['Покрышки', '700×40c Tubeless'], ['Внутренняя ширина', '25 мм']] },
+          frame: { tag: 'Фреймсет', title: 'Рама Veloce Terra', items: [['Максимальный зазор', 'До 45 мм']] },
+          drivetrain: { tag: 'Трансмиссия', title: 'Привод 1×12 XPLR', items: [['Звезда', '42T Narrow-Wide'], ['Кассета', '10–44T']] }
+        }
+      },
+      {
+        id: 'veloce-terra-raid',
+        name: 'Veloce Terra Raid',
+        category: 'Грэвел',
+        type: 'gravel',
+        price: 2290,
+        weight: '7,9 кг',
+        rimDepth: 20,
+        tanwall: true,
+        desc: 'Туристический грэвел с усиленными колёсами, защитой нижней трубы и креплениями под сумки.',
+        colors: [
+          { name: 'Антрацит', c1: '#434c56', c2: '#21262B', c3: '#111417' },
+          { name: 'Сланец', c1: '#9eb0c2', c2: '#778899', c3: '#4a5764' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Veloce Raid 42c', items: [['Покрышки', '700×42c с кевларовым кордом']] },
+          frame: { tag: 'Фреймсет', title: 'Рама Terra Reinforced', items: [['Защита', 'Титановая пластина каретки']] },
+          drivetrain: { tag: 'Трансмиссия', title: 'Группа 1×12 (10–50T)', items: [['Диапазон', '500 %']] }
+        }
+      },
+      {
+        id: 'veloce-metro-air',
+        name: 'Veloce Metro Air',
+        category: 'Городские',
+        type: 'city',
+        price: 1490,
+        weight: '8,1 кг',
+        rimDepth: 16,
+        tanwall: false,
+        desc: 'Городской велосипед с карбоновым ремнём Gates вместо цепи, полноразмерными крыльями и задним багажником.',
+        colors: [
+          { name: 'Антрацит', c1: '#434c56', c2: '#21262B', c3: '#111417' },
+          { name: 'Светлый', c1: '#ffffff', c2: '#DFE4E8', c3: '#9CA3AA' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Veloce Urban 35c', items: [['Покрышки', '700×35c с защитой от проколов']] },
+          frame: { tag: 'Фреймсет', title: 'Рама Metro + Крылья', items: [['Оснащение', 'Алюминиевые крылья и багажник до 18 кг']] },
+          drivetrain: { tag: 'Привод', title: 'Ремень Gates Carbon Drive', items: [['Особенности', 'Не требует смазки, не пачкает одежду']] }
+        }
+      },
+      {
+        id: 'veloce-pista-pro',
+        name: 'Veloce Pista Pro Disc',
+        category: 'Трек',
+        type: 'track',
+        price: 1990,
+        weight: '6,2 кг',
+        rimDepth: 29,
+        tanwall: true,
+        desc: 'Трековая модель со сплошным задним карбоновым диском, передним профилем 80 мм и фиксированной передачей.',
+        colors: [
+          { name: 'Антрацит', c1: '#434c56', c2: '#21262B', c3: '#111417' },
+          { name: 'Сланец', c1: '#9eb0c2', c2: '#778899', c3: '#4a5764' }
+        ],
+        specs: {
+          wheel: { tag: 'Колёса', title: 'Диск Lenticular + 80mm', items: [['Заднее колесо', 'Сплошной аэродинамический диск']] },
+          frame: { tag: 'Фреймсет', title: 'Рама Pista UCI Track', items: [['Допуск', 'Сертификат UCI']] },
+          drivetrain: { tag: 'Привод', title: 'Фиксированная передача 54×14T', items: [['Цепь', 'Izumi Super Toughness']] }
+        }
+      }
+    ];
+
+    let currentHeroBike = BIKES[0];
+    let currentColorIndex = 0;
+    let activePartKey = null;
+    let activeCategoryFilter = 'all';
+    let tradeInDiscountApplied = 0;
+    let windSpeedMode = 'normal';
+    let cart = [{ id: 'veloce-duo', name: 'Veloce Duo', price: 2339, qty: 1 }];
+    let currentBikeFit = { height: 178, weight: 74, sizeLabel: 'M (54)' };
+
+    function loadStateFromLocalStorage() {
+      try {
+        const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          if (Array.isArray(parsed)) cart = parsed;
+        }
+        const savedBikeId = localStorage.getItem(STORAGE_KEYS.HERO_BIKE_ID);
+        if (savedBikeId) {
+          const found = BIKES.find(b => b.id === savedBikeId);
+          if (found) currentHeroBike = found;
+        }
+        const savedColorIdx = localStorage.getItem(STORAGE_KEYS.HERO_COLOR_IDX);
+        if (savedColorIdx !== null) {
+          const idx = parseInt(savedColorIdx, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < currentHeroBike.colors.length) currentColorIndex = idx;
+        }
+        const savedTradeIn = localStorage.getItem(STORAGE_KEYS.TRADE_IN);
+        if (savedTradeIn !== null) {
+          const val = parseFloat(savedTradeIn);
+          if (!isNaN(val)) tradeInDiscountApplied = val;
+        }
+        const savedFilter = localStorage.getItem(STORAGE_KEYS.CAT_FILTER);
+        if (savedFilter && VALID_CATEGORIES.includes(savedFilter)) {
+          activeCategoryFilter = savedFilter;
+        } else {
+          activeCategoryFilter = 'all';
+        }
+        const savedFit = localStorage.getItem(STORAGE_KEYS.BIKE_FIT);
+        if (savedFit) {
+          const fitObj = JSON.parse(savedFit);
+          if (fitObj && fitObj.height && fitObj.weight) {
+            currentBikeFit = fitObj;
+            const hInput = document.getElementById('fitHeightInput');
+            const wInput = document.getElementById('fitWeightInput');
+            if (hInput) hInput.value = fitObj.height;
+            if (wInput) wInput.value = fitObj.weight;
+          }
+        }
+      } catch (e) {
+        activeCategoryFilter = 'all';
+      }
+    }
+
+    function saveCartToStorage() {
+      try { localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart)); } catch (e) {}
+    }
+
+    function saveHeroSelectionToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.HERO_BIKE_ID, currentHeroBike.id);
+        localStorage.setItem(STORAGE_KEYS.HERO_COLOR_IDX, String(currentColorIndex));
+      } catch (e) {}
+    }
+
+    function resetSavedStorage() {
+      try { Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+      currentHeroBike = BIKES[0];
+      currentColorIndex = 0;
+      tradeInDiscountApplied = 0;
+      activeCategoryFilter = 'all';
+      cart = [{ id: 'veloce-duo', name: 'Veloce Duo', price: 2339, qty: 1 }];
+      document.getElementById('fitHeightInput').value = 178;
+      document.getElementById('fitWeightInput').value = 74;
+      renderHeroSection();
+      filterCatalog('all');
+      updateCartUI();
+      calculateBikeFit(false);
+      showToast('Настройки сброшены');
+    }
+
+    // ДЕТАЛИЗИРОВАННАЯ ГЕНЕРАЦИЯ ВЕЛОСИПЕДА
+    function buildBikeInnerMarkup(bike, colorObj, uid, isInteractiveHero = false) {
+      const gradId = `frameGrad_${uid}`;
+      const sheenId = `frameSheen_${uid}`;
+      const rimGradId = `rimGrad_${uid}`;
+      const tireGradId = `tireGrad_${uid}`;
+      const shadowId = `shadow_${uid}`;
+      const metalGradId = `metalGrad_${uid}`;
+
+      const isGravel = bike.type === 'gravel';
+      const isCity = bike.type === 'city';
+      const isTrack = bike.type === 'track';
+
+      const tireWidth = isGravel || isCity ? 15 : 13.5;
+      const sidewallColor = bike.tanwall ? '#c89b62' : '#353a40';
+      const sidewallWidth = bike.tanwall ? 3.8 : 2.0;
+      const rimStroke = bike.rimDepth || 24;
+      const rimRadius = 122 - rimStroke / 2;
+      const innerRimR = Math.round(122 - rimStroke);
+
+      let spokesLines = '';
+      let nipplesDots = '';
+      for (let i = 0; i < 24; i++) {
+        const angle = (i * 15) * Math.PI / 180;
+        const flangeOffset = (i % 2 === 0 ? 0.36 : -0.36);
+        const x1 = (18 * Math.cos(angle + flangeOffset)).toFixed(1);
+        const y1 = (18 * Math.sin(angle + flangeOffset)).toFixed(1);
+        const x2 = ((innerRimR + 1.2) * Math.cos(angle)).toFixed(1);
+        const y2 = ((innerRimR + 1.2) * Math.sin(angle)).toFixed(1);
+        spokesLines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+        const nx = ((innerRimR - 0.5) * Math.cos(angle)).toFixed(1);
+        const ny = ((innerRimR - 0.5) * Math.sin(angle)).toFixed(1);
+        nipplesDots += `<circle cx="${nx}" cy="${ny}" r="1.45" fill="#A9A9A9" />`;
+      }
+      const wheelSpokesGroup = `<g stroke="#778899" stroke-width="1.15" opacity="0.88">${spokesLines}</g><g>${nipplesDots}</g>`;
+
+      const prestaValve = `
+        <line x1="0" y1="${innerRimR}" x2="0" y2="${innerRimR - 13}" stroke="#A9A9A9" stroke-width="2.2" stroke-linecap="round" />
+        <rect x="-1.6" y="${innerRimR - 16}" width="3.2" height="4" rx="1" fill="#F5C518" />
+      `;
+
+      const discRotorGroup = isTrack ? '' : `
+        <circle cx="0" cy="0" r="37" fill="none" stroke="url(#${metalGradId})" stroke-width="6.5" />
+        <circle cx="0" cy="0" r="37" fill="none" stroke="#21262B" stroke-width="2.2" stroke-dasharray="3 4.5" opacity="0.75" />
+        <circle cx="0" cy="0" r="30.5" fill="none" stroke="#181c20" stroke-width="2.5" stroke-dasharray="5 3" />
+        <g stroke="#21262B" stroke-width="3.2" stroke-linecap="round">
+          <line x1="0" y1="-12" x2="8" y2="-31" /><line x1="10" y1="-6" x2="29" y2="-12" />
+          <line x1="10" y1="6" x2="24" y2="21" /><line x1="0" y1="12" x2="-8" y2="31" />
+          <line x1="-10" y1="6" x2="-29" y2="12" /><line x1="-10" y1="-6" x2="-24" y2="-21" />
+        </g>
+        <circle cx="0" cy="0" r="14.5" fill="#21262B" stroke="#778899" stroke-width="1.6" />
+      `;
+
+      const rimDecalsAndGlare = `
+        <path d="M -82 -52 A 97 97 0 0 1 -38 -90" stroke="#ffffff" stroke-opacity="0.22" stroke-width="4.5" stroke-linecap="round" fill="none" />
+        <path d="M 82 52 A 97 97 0 0 1 38 90" stroke="#ffffff" stroke-opacity="0.16" stroke-width="4" stroke-linecap="round" fill="none" />
+      `;
+
+      const gravelTread = isGravel ? `<circle cx="0" cy="0" r="134.2" stroke="#15181C" stroke-width="3" stroke-dasharray="3.2 2.4" fill="none" />` : '';
+
+      const rearWheelSvg = isTrack ? `
+        <circle cx="0" cy="0" r="127" stroke="url(#${tireGradId})" stroke-width="${tireWidth}" fill="none" />
+        <circle cx="0" cy="0" r="120.5" stroke="${sidewallColor}" stroke-width="${sidewallWidth}" fill="none" />
+        <circle cx="0" cy="0" r="119" fill="url(#${rimGradId})" />
+        <path d="M -85 -65 L 85 65" stroke="#ffffff" stroke-opacity="0.08" stroke-width="38" />
+        <circle cx="0" cy="0" r="88" stroke="#2d343c" stroke-width="1.2" stroke-dasharray="8 6" fill="none" />
+        <circle cx="0" cy="0" r="16" fill="#A9A9A9" stroke="#21262B" stroke-width="2.5" />
+        <circle cx="0" cy="0" r="8" fill="#21262B" />
+      ` : `
+        <circle cx="0" cy="0" r="33" fill="#1b2025" stroke="#586775" stroke-width="1.5" stroke-dasharray="3 1.5" />
+        <circle cx="0" cy="0" r="28.5" fill="#778899" stroke="#21262B" stroke-width="1.2" />
+        <circle cx="0" cy="0" r="24" fill="#9eb0c2" stroke="#21262B" stroke-width="1.1" />
+        <circle cx="0" cy="0" r="19.5" fill="#c4ccd4" stroke="#21262B" stroke-width="1" />
+        <circle cx="0" cy="0" r="15" fill="#e2e6ea" stroke="#21262B" stroke-width="1" />
+        ${wheelSpokesGroup}
+        ${prestaValve}
+        <circle cx="0" cy="0" r="127" stroke="url(#${tireGradId})" stroke-width="${tireWidth}" fill="none" />
+        ${gravelTread}
+        <circle cx="0" cy="0" r="120.2" stroke="${sidewallColor}" stroke-width="${sidewallWidth}" fill="none" />
+        <circle cx="0" cy="0" r="${rimRadius}" stroke="url(#${rimGradId})" stroke-width="${rimStroke}" fill="none" />
+        <circle cx="0" cy="0" r="${innerRimR}" stroke="#394149" stroke-width="1.2" fill="none" />
+        ${rimDecalsAndGlare}
+        ${discRotorGroup}
+        <circle cx="0" cy="0" r="11" fill="#181c20" stroke="#F1F1F1" stroke-width="2" />
+        <circle cx="0" cy="0" r="4.5" fill="#778899" />
+      `;
+
+      const frontWheelSvg = `
+        ${wheelSpokesGroup}
+        ${prestaValve}
+        <circle cx="0" cy="0" r="127" stroke="url(#${tireGradId})" stroke-width="${tireWidth}" fill="none" />
+        ${gravelTread}
+        <circle cx="0" cy="0" r="120.2" stroke="${sidewallColor}" stroke-width="${sidewallWidth}" fill="none" />
+        <circle cx="0" cy="0" r="${rimRadius}" stroke="url(#${rimGradId})" stroke-width="${rimStroke}" fill="none" />
+        <circle cx="0" cy="0" r="${innerRimR}" stroke="#394149" stroke-width="1.2" fill="none" />
+        ${rimDecalsAndGlare}
+        ${discRotorGroup}
+        <circle cx="0" cy="0" r="11.5" fill="#181c20" stroke="#F1F1F1" stroke-width="2" />
+        <circle cx="0" cy="0" r="4.5" fill="#778899" />
+      `;
+
+      const cityExtras = isCity ? `
+        <path d="M 94 302 A 140 140 0 0 1 356 232" stroke="#181C20" stroke-width="5" fill="none" stroke-linecap="round" />
+        <line x1="234" y1="302" x2="112" y2="238" stroke="#778899" stroke-width="1.8" />
+        <path d="M 504 222 A 140 140 0 0 1 766 302" stroke="#181C20" stroke-width="5" fill="none" stroke-linecap="round" />
+        <line x1="626" y1="302" x2="748" y2="250" stroke="#778899" stroke-width="1.8" />
+        <path d="M 162 178 L 318 178 L 234 302 M 205 178 L 234 302" stroke="#21262B" stroke-width="3.8" fill="none" stroke-linejoin="round" stroke-linecap="round" />
+      ` : '';
+
+      const bottleAndCage = isTrack ? '' : `
+        <g transform="translate(462, 238) rotate(-42.5)">
+          <rect x="-15" y="-44" width="30" height="58" rx="9" fill="#1e242a" fill-opacity="0.9" stroke="#778899" stroke-width="1.5" />
+          <path d="M -11 -44 L 11 -44 L 9 -52 L -9 -52 Z" fill="#14171a" />
+          <rect x="-5" y="-57" width="10" height="5" rx="2" fill="#778899" />
+          <path d="M -16 14 L -16 -26 L 0 -16 L 16 -26 L 16 14 Z" fill="none" stroke="${colorObj.c1}" stroke-width="3.2" stroke-linejoin="round" />
+        </g>
+      `;
+
+      const wheelClickAttr = isInteractiveHero ? `onclick="togglePartView('wheel')" class="bike-part-trigger"` : '';
+      const frameClickAttr = isInteractiveHero ? `onclick="togglePartView('frame')" class="bike-part-trigger"` : '';
+      const driveClickAttr = isInteractiveHero ? `onclick="togglePartView('drivetrain')" class="bike-part-trigger"` : '';
+
+      return `
+        <defs>
+          <linearGradient id="${gradId}" x1="210" y1="95" x2="650" y2="335" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="${colorObj.c1}" />
+            <stop offset="48%" stop-color="${colorObj.c2}" />
+            <stop offset="100%" stop-color="${colorObj.c3}" />
+          </linearGradient>
+          <linearGradient id="${sheenId}" x1="300" y1="110" x2="580" y2="290" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.52" />
+            <stop offset="50%" stop-color="#ffffff" stop-opacity="0.12" />
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+          </linearGradient>
+          <linearGradient id="${rimGradId}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2e353d" />
+            <stop offset="50%" stop-color="#1c2025" />
+            <stop offset="100%" stop-color="#121518" />
+          </linearGradient>
+          <linearGradient id="${tireGradId}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#23282e" />
+            <stop offset="100%" stop-color="#0f1215" />
+          </linearGradient>
+          <linearGradient id="${metalGradId}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#e2e6ea" />
+            <stop offset="50%" stop-color="#8e9fae" />
+            <stop offset="100%" stop-color="#c4ccd4" />
+          </linearGradient>
+          <radialGradient id="${shadowId}" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(20,24,28,0.34)" />
+            <stop offset="65%" stop-color="rgba(20,24,28,0.10)" />
+            <stop offset="100%" stop-color="rgba(20,24,28,0)" />
+          </radialGradient>
+        </defs>
+
+        <ellipse cx="430" cy="427" rx="345" ry="13.5" fill="url(#${shadowId})" />
+
+        <g ${wheelClickAttr}>
+          <g transform="translate(234, 302)">${rearWheelSvg}</g>
+          <g transform="translate(626, 302)">${frontWheelSvg}</g>
+        </g>
+
+        ${cityExtras}
+
+        <g ${driveClickAttr}>
+          ${isTrack ? `
+            <path d="M 234 287 L 396 280 L 396 352 L 234 317 Z" stroke="#21262B" stroke-width="4.8" fill="none" />
+            <path d="M 234 287 L 396 280 L 396 352 L 234 317 Z" stroke="#c4ccd4" stroke-width="2.6" stroke-dasharray="5 3" fill="none" />
+          ` : `
+            <path d="M 234 274 L 396 279 L 396 352 L 234 366 L 250 342 L 218 318 L 234 274" stroke="#21262B" stroke-width="4.6" stroke-linejoin="round" fill="none" />
+            <path d="M 234 274 L 396 279 L 396 352 L 234 366 L 250 342 L 218 318 L 234 274" stroke="#d0d7de" stroke-width="2.4" stroke-dasharray="4.5 2.5" stroke-linejoin="round" fill="none" />
+            <path d="M 234 302 L 240 322 L 250 342 L 234 366" stroke="#181c20" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M 234 302 L 240 322 L 250 342 L 234 366" stroke="#434c56" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="250" cy="342" r="8.5" fill="#21262B" stroke="#778899" stroke-width="2.2" />
+            <circle cx="234" cy="366" r="10.5" fill="#21262B" stroke="#778899" stroke-width="2.2" />
+            <rect x="374" y="255" width="16" height="22" rx="4" transform="rotate(-16 374 255)" fill="#181c20" stroke="#778899" stroke-width="1.5" />
+            <path d="M 382 272 L 408 276 L 405 289 L 382 284 Z" fill="#A9A9A9" stroke="#21262B" stroke-width="1.2" />
+          `}
+        </g>
+
+        <g ${frameClickAttr}>
+          <path d="M 353 162 L 323 78 L 337 76 L 369 162 Z" fill="#181c20" />
+          <rect x="319" y="72" width="18" height="9" rx="3" fill="#373e46" stroke="#A9A9A9" stroke-width="1.2" />
+          <path d="M 294 69 L 352 74 L 330 78 L 304 74 Z" fill="none" stroke="#A9A9A9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 270 62 C 292 59, 342 64, 379 70 C 386 71, 385 77, 372 76 C 342 74, 310 75, 282 75 C 268 74, 263 64, 270 62 Z" fill="#14171a" stroke="#373e46" stroke-width="1" />
+        </g>
+
+        <g ${frameClickAttr}>
+          <polygon points="556,112 574,108 571,94 553,98" fill="#1e2328" stroke="#373e46" stroke-width="1" />
+          <path d="M 556 97 L 608 87 C 633 87, 643 104, 637 124 C 632 138, 614 141, 596 135" stroke="#181c20" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <path d="M 626 94 C 639 102, 640 116, 635 126 C 630 137, 614 140, 597 135" stroke="#373e46" stroke-width="13.5" stroke-dasharray="3.5 2.5" stroke-linecap="round" fill="none" />
+          ${isTrack ? '' : `
+            <path d="M 616 88 L 635 64 C 640 59, 648 63, 645 72 L 636 105 Z" fill="#181c20" stroke="#434c56" stroke-width="1.2" />
+            <path d="M 642 73 C 649 90, 652 110, 646 125" stroke="#21262B" stroke-width="4.2" stroke-linecap="round" fill="none" />
+          `}
+        </g>
+
+        <g ${frameClickAttr}>
+          ${bottleAndCage}
+          ${isTrack ? '' : `<rect x="252" y="286" width="18" height="11" rx="3" transform="rotate(8 252 286)" fill="#181c20" stroke="#778899" stroke-width="1.4" />`}
+          <path d="M 230 298 L 355 162 L 364 174 L 239 306 Z" fill="url(#${gradId})" />
+          <path d="M 232 296 L 396 304 L 396 326 L 232 308 Z" fill="url(#${gradId})" />
+          <path d="M 341 144 L 365 142 L 382 225 A 136 136 0 0 0 407 312 L 384 318 C 369 270, 362 232, 341 144 Z" fill="url(#${gradId})" />
+          <path d="M 384 312 L 566 138 L 584 158 L 412 325 C 398 330, 384 324, 384 312 Z" fill="url(#${gradId})" />
+          <path d="M 341 144 L 566 106 L 572 126 L 348 164 Z" fill="url(#${gradId})" />
+          <path d="M 555 104 L 577 100 L 594 162 L 570 166 Z" fill="url(#${gradId})" />
+          <polygon points="341,144 394,138 368,184 348,162" fill="url(#${gradId})" />
+          <polygon points="528,113 572,104 590,162 542,172" fill="url(#${gradId})" />
+          <circle cx="396" cy="316" r="24" fill="url(#${gradId})" />
+          <path d="M 570 160 L 594 156 L 634 302 L 618 302 Z" fill="url(#${gradId})" />
+          ${isTrack ? '' : `<rect x="598" y="272" width="15" height="19" rx="3.5" transform="rotate(-18 598 272)" fill="#181c20" stroke="#778899" stroke-width="1.4" />`}
+          <path d="M 350 147 L 562 111" stroke="url(#${sheenId})" stroke-width="3.2" stroke-linecap="round" />
+          <path d="M 412 292 L 568 146" stroke="url(#${sheenId})" stroke-width="4" stroke-linecap="round" />
+          <circle cx="234" cy="302" r="6.5" fill="#181c20" stroke="#A9A9A9" stroke-width="1.8" />
+          <ellipse cx="626" cy="302" rx="6.5" ry="5" transform="rotate(-18 626 302)" fill="#181c20" stroke="#A9A9A9" stroke-width="1.8" />
+          <text x="466" y="256" transform="rotate(-42.5 466 256)" fill="#F1F1F1" opacity="0.96" font-family="'Inter', sans-serif" font-size="16.5" font-weight="900" letter-spacing="4">VELOCE</text>
+        </g>
+
+        <g ${driveClickAttr}>
+          <g transform="translate(396, 316)">
+            <circle cx="0" cy="0" r="39" fill="none" stroke="#A9A9A9" stroke-width="3" stroke-dasharray="3.2 2.1" />
+            <circle cx="0" cy="0" r="37" fill="#181c20" stroke="#434c56" stroke-width="2" />
+            <circle cx="0" cy="0" r="27" fill="none" stroke="#778899" stroke-width="2.2" stroke-dasharray="6 3.5" />
+            <circle cx="0" cy="0" r="20" fill="none" stroke="#2c343c" stroke-width="3" />
+            <g stroke="#252b31" stroke-width="7.5" stroke-linecap="round">
+              <line x1="-24" y1="-24" x2="24" y2="24" />
+              <line x1="24" y1="-24" x2="-24" y2="24" />
+            </g>
+            <circle cx="0" cy="0" r="12" fill="#14171a" stroke="#778899" stroke-width="2.2" />
+            <path d="M -6 -7 L 7 -5 L 50 32 C 55 36, 50 43, 42 40 L -7 6 Z" fill="#14171a" stroke="#586775" stroke-width="1.5" />
+            <path d="M 35 32 L 60 32 L 56 41 L 39 41 Z" fill="#21262B" stroke="#A9A9A9" stroke-width="1.4" />
+          </g>
+        </g>
+      `;
+    }
+
+    function buildPrecisionBikeSvg(bike, colorObj, uid, isInteractiveHero = false) {
+      const svgViewBox = isInteractiveHero ? '72 38 716 400' : '0 0 860 445';
+      return `<svg viewBox="${svgViewBox}" class="bike-svg-render" fill="none" xmlns="http://www.w3.org/2000/svg">${buildBikeInnerMarkup(bike, colorObj, uid, isInteractiveHero)}</svg>`;
+    }
+
+    function buildIsolatedPartSvg(bike, colorObj, partKey) {
+      const uid = 'iso_' + bike.id + '_' + currentColorIndex;
+
+      if (partKey === 'wheel') {
+        const rimStroke = bike.rimDepth || 24;
+        const rimRadius = 114 - rimStroke / 2;
+        const innerRimR = Math.round(114 - rimStroke);
+        let spokes = '';
+        let nipples = '';
+        for (let i = 0; i < 24; i++) {
+          const angle = (i * 15) * Math.PI / 180;
+          const x1 = (18 * Math.cos(angle + (i % 2 === 0 ? 0.35 : -0.35))).toFixed(1);
+          const y1 = (18 * Math.sin(angle + (i % 2 === 0 ? 0.35 : -0.35))).toFixed(1);
+          const x2 = ((innerRimR + 1.2) * Math.cos(angle)).toFixed(1);
+          const y2 = ((innerRimR + 1.2) * Math.sin(angle)).toFixed(1);
+          spokes += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;
+          const nx = ((innerRimR - 0.5) * Math.cos(angle)).toFixed(1);
+          const ny = ((innerRimR - 0.5) * Math.sin(angle)).toFixed(1);
+          nipples += `<circle cx="${nx}" cy="${ny}" r="1.6" fill="#A9A9A9" />`;
+        }
+
+        return `
+          <svg viewBox="0 0 380 300" class="part-zoom-anim bike-svg-render" style="max-width:300px; margin:0 auto;" fill="none">
+            <ellipse cx="190" cy="284" rx="120" ry="9" fill="rgba(33,38,43,0.16)" />
+            <g transform="translate(190, 145)">
+              <g stroke="#778899" stroke-width="1.25" opacity="0.88">${spokes}</g>
+              <g>${nipples}</g>
+              <circle r="120" stroke="#181c20" stroke-width="13.5" fill="none" />
+              <circle r="113.2" stroke="${bike.tanwall ? '#c89b62' : '#3a3f45'}" stroke-width="3.8" fill="none" />
+              <circle r="${rimRadius}" stroke="#1c2025" stroke-width="${rimStroke}" fill="none" />
+              <circle r="41" stroke="#d0d7de" stroke-width="7" fill="none" />
+              <circle r="33" stroke="#181c20" stroke-width="3" stroke-dasharray="6 3" fill="none" />
+              <circle r="24" fill="#778899" stroke="#21262B" stroke-width="2" />
+              <circle r="15" fill="#21262B" stroke="#A9A9A9" stroke-width="2" />
+            </g>
+          </svg>
+        `;
+      }
+
+      if (partKey === 'frame') {
+        const fGrad = `isoFrameGrad_${uid}`;
+        return `
+          <svg viewBox="185 55 495 295" class="part-zoom-anim bike-svg-render" style="max-width:400px; margin:0 auto;" fill="none">
+            <defs>
+              <linearGradient id="${fGrad}" x1="220" y1="90" x2="630" y2="320" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="${colorObj.c1}" />
+                <stop offset="50%" stop-color="${colorObj.c2}" />
+                <stop offset="100%" stop-color="${colorObj.c3}" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="430" cy="336" rx="195" ry="10" fill="rgba(33,38,43,0.14)" />
+            <path d="M 353 152 L 325 82 L 339 80 L 368 152 Z" fill="#181c20" />
+            <path d="M 230 288 L 355 152 L 364 164 L 239 296 Z" fill="url(#${fGrad})" />
+            <path d="M 232 286 L 396 294 L 396 316 L 232 298 Z" fill="url(#${fGrad})" />
+            <path d="M 341 134 L 365 132 L 382 215 A 136 136 0 0 0 407 302 L 384 308 C 369 260, 362 222, 341 134 Z" fill="url(#${fGrad})" />
+            <path d="M 384 302 L 566 128 L 584 148 L 412 315 Z" fill="url(#${fGrad})" />
+            <path d="M 341 134 L 566 96 L 572 116 L 348 154 Z" fill="url(#${fGrad})" />
+            <path d="M 555 94 L 577 90 L 594 152 L 570 156 Z" fill="url(#${fGrad})" />
+            <polygon points="341,134 394,128 368,174 348,152" fill="url(#${fGrad})" />
+            <polygon points="528,103 572,94 590,152 542,162" fill="url(#${fGrad})" />
+            <path d="M 570 150 L 594 146 L 634 292 L 618 292 Z" fill="url(#${fGrad})" />
+            <circle cx="396" cy="306" r="18" fill="#181c20" stroke="#778899" stroke-width="3" />
+            <text x="466" y="245" transform="rotate(-42.5 466 245)" fill="#F1F1F1" opacity="0.96" font-size="16.5" font-weight="900" letter-spacing="4">VELOCE</text>
+          </svg>
+        `;
+      }
+
+      return `
+        <svg viewBox="0 0 430 265" class="part-zoom-anim bike-svg-render" style="max-width:350px; margin:0 auto;" fill="none">
+          <ellipse cx="215" cy="248" rx="165" ry="9" fill="rgba(33,38,43,0.14)" />
+          <path d="M 105 64 L 295 52 L 295 166 L 105 198 L 124 162 L 88 134 Z" stroke="#21262B" stroke-width="6" stroke-linejoin="round" fill="none" />
+          <path d="M 105 64 L 295 52 L 295 166 L 105 198 L 124 162 L 88 134 Z" stroke="#d0d7de" stroke-width="3" stroke-dasharray="5 3" stroke-linejoin="round" fill="none" />
+          <g transform="translate(105, 110)">
+            <circle r="48" fill="#1b2025" stroke="#586775" stroke-width="2" stroke-dasharray="4 2" />
+            <circle r="40" fill="#778899" stroke="#21262B" stroke-width="1.8" />
+            <circle r="31" fill="#A9A9A9" stroke="#21262B" stroke-width="1.5" />
+            <circle r="21" fill="#F1F1F1" stroke="#21262B" stroke-width="1.5" />
+            <path d="M 0 0 L 19 52 L 0 88" stroke="#181c20" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="19" cy="52" r="11" fill="#21262B" stroke="#778899" stroke-width="2.5" />
+            <circle cx="0" cy="88" r="13" fill="#21262B" stroke="#778899" stroke-width="2.5" />
+          </g>
+          <g transform="translate(295, 110)">
+            <circle r="58" fill="none" stroke="#A9A9A9" stroke-width="3.5" stroke-dasharray="4 2.2" />
+            <circle r="55" fill="#181c20" stroke="#434c56" stroke-width="2.5" />
+            <circle r="40" fill="none" stroke="#778899" stroke-width="2.5" stroke-dasharray="6 3" />
+            <line x1="-36" y1="-36" x2="36" y2="36" stroke="#283038" stroke-width="10" stroke-linecap="round" />
+            <line x1="36" y1="-36" x2="-36" y2="36" stroke="#283038" stroke-width="10" stroke-linecap="round" />
+            <circle r="16" fill="#14171a" stroke="#778899" stroke-width="2.5" />
+            <path d="M -8 -10 L 9 -6 L 76 46 C 82 52, 76 62, 65 58 L -10 8 Z" fill="#14171a" stroke="#778899" stroke-width="2" />
+            <rect x="56" y="46" width="30" height="10" rx="3" fill="#21262B" stroke="#A9A9A9" stroke-width="2" />
+          </g>
+        </svg>
+      `;
+    }
+
+    function renderCFDWindTunnel() {
+      const container = document.getElementById('cfdWindTunnelWrapper');
+      if (!container) return;
+      const bikeSvgInner = buildBikeInnerMarkup(BIKES[0], BIKES[0].colors[0], 'cfd_tunnel', false);
+      const flowClass = windSpeedMode === 'fast' ? 'cfd-flow-fast' : 'cfd-flow-line';
+
+      container.innerHTML = `
+        <svg viewBox="45 25 790 415" class="bike-svg-render" fill="none">
+          <defs>
+            <linearGradient id="cfdAirGrad" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stop-color="#F5C518" stop-opacity="0.08" />
+              <stop offset="35%" stop-color="#F5C518" stop-opacity="0.82" />
+              <stop offset="75%" stop-color="#778899" stop-opacity="0.6" />
+              <stop offset="100%" stop-color="#778899" stop-opacity="0.05" />
+            </linearGradient>
+            <radialGradient id="cfdFrontZone" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(245, 197, 24, 0.36)" />
+              <stop offset="60%" stop-color="rgba(119, 136, 153, 0.14)" />
+              <stop offset="100%" stop-color="rgba(0, 0, 0, 0)" />
+            </radialGradient>
+          </defs>
+
+          <g stroke="#778899" stroke-opacity="0.1" stroke-width="1">
+            <line x1="55" y1="90" x2="815" y2="90" />
+            <line x1="55" y1="170" x2="815" y2="170" />
+            <line x1="55" y1="250" x2="815" y2="250" />
+            <line x1="55" y1="330" x2="815" y2="330" />
+            <line x1="55" y1="410" x2="815" y2="410" />
+          </g>
+
+          <circle cx="628" cy="115" r="64" fill="url(#cfdFrontZone)" />
+          <circle cx="745" cy="295" r="74" fill="url(#cfdFrontZone)" />
+
+          <path d="M 815 72 C 690 72, 645 48, 555 64 C 420 86, 260 72, 60 76" stroke="url(#cfdAirGrad)" stroke-width="2.2" class="${flowClass}" />
+          <path d="M 825 132 C 700 132, 635 104, 545 122 C 410 148, 250 134, 55 138" stroke="url(#cfdAirGrad)" stroke-width="2.6" class="${flowClass}" />
+          <path d="M 820 218 C 715 218, 645 198, 535 216 C 395 238, 240 225, 55 228" stroke="url(#cfdAirGrad)" stroke-width="2.2" class="${flowClass}" />
+          <path d="M 825 302 C 740 302, 675 278, 560 298 C 415 320, 240 306, 55 308" stroke="url(#cfdAirGrad)" stroke-width="2.4" class="${flowClass}" />
+          <path d="M 815 372 C 720 372, 650 385, 530 370 C 390 355, 240 372, 60 368" stroke="url(#cfdAirGrad)" stroke-width="1.8" class="${flowClass}" />
+
+          <g>${bikeSvgInner}</g>
+        </svg>
+      `;
+    }
+
+    function setWindSpeed(mode) {
+      windSpeedMode = mode;
+      const btnNorm = document.getElementById('windBtnNormal');
+      const btnFast = document.getElementById('windBtnFast');
+      const badge = document.getElementById('windTunnelSavingBadge');
+
+      if (mode === 'fast') {
+        btnFast.style.background = '#F5C518';
+        btnFast.style.color = '#21262B';
+        btnFast.style.fontWeight = '700';
+        btnNorm.style.background = 'transparent';
+        btnNorm.style.color = '#A9A9A9';
+        if (badge) badge.textContent = 'Экономия мощности на 65 км/ч: −29 Вт';
+      } else {
+        btnNorm.style.background = '#778899';
+        btnNorm.style.color = '#FFFFFF';
+        btnNorm.style.fontWeight = '700';
+        btnFast.style.background = 'transparent';
+        btnFast.style.color = '#A9A9A9';
+        if (badge) badge.textContent = 'Сопротивление: CdA 0.198 м²';
+      }
+      renderCFDWindTunnel();
+    }
+
+    function renderHeroSection() {
+      const bike = currentHeroBike || BIKES[0];
+      const colorObj = bike.colors[currentColorIndex] || bike.colors[0];
+
+      document.getElementById('heroCategoryBadge').textContent = bike.category;
+      document.getElementById('heroBikeTitle').textContent = bike.name;
+      document.getElementById('heroBikeSubtitle').textContent = bike.weight;
+
+      const spot = document.getElementById('heroAmbientSpotlight');
+      if (spot) spot.style.background = `radial-gradient(circle at 50% 48%, ${colorObj.c2}44 0%, transparent 62%)`;
+
+      const effectivePrice = Math.max(bike.price - tradeInDiscountApplied, 790);
+      document.getElementById('heroMonthlyPrice').textContent = `${(effectivePrice / 24).toFixed(2).replace('.', ',')} €/мес.`;
+      document.getElementById('heroTotalPrice').textContent = `${effectivePrice.toLocaleString('ru-RU')} €`;
+
+      const dotsContainer = document.getElementById('heroColorDots');
+      dotsContainer.innerHTML = bike.colors.map((c, idx) => `
+        <button onclick="selectHeroColor(${idx})" class="color-dot ${idx === currentColorIndex ? 'active' : ''}" style="background: linear-gradient(135deg, ${c.c1}, ${c.c3});" title="${c.name}" aria-label="${c.name}"></button>
+      `).join('');
+      document.getElementById('selectedColorLabel').textContent = colorObj.name;
+      document.getElementById('fullBikeContainer').innerHTML = buildPrecisionBikeSvg(bike, colorObj, 'hero', true);
+
+      if (activePartKey) updateIsolatedViewContent(activePartKey);
+    }
+
+    function selectHeroColor(idx) {
+      currentColorIndex = idx;
+      saveHeroSelectionToStorage();
+      renderHeroSection();
+    }
+
+    function loadBikeToHero(bikeId) {
+      const found = BIKES.find(b => b.id === bikeId);
+      if (!found) return;
+      currentHeroBike = found;
+      currentColorIndex = 0;
+      saveHeroSelectionToStorage();
+      resetToFullBike(true);
+      renderHeroSection();
+      renderCatalog(activeCategoryFilter);
+      document.getElementById('heroSection').scrollIntoView({ behavior: 'smooth' });
+      showToast(`Выбрана модель ${found.name}`);
+    }
+
+    let stageAnimTimeout = null;
+
+    function togglePartView(partKey) {
+      if (activePartKey === partKey) {
+        resetToFullBike();
+        return;
+      }
+      activePartKey = partKey;
+
+      const fullEl = document.getElementById('fullBikeContainer');
+      const toolbarEl = document.getElementById('colorToolbar');
+      const isoEl = document.getElementById('isolatedPartContainer');
+
+      clearTimeout(stageAnimTimeout);
+
+      if (!isoEl.classList.contains('hidden')) {
+        updateIsolatedViewContent(partKey);
+        return;
+      }
+
+      fullEl.classList.add('stage-exit');
+      toolbarEl.classList.add('stage-exit');
+
+      stageAnimTimeout = setTimeout(() => {
+        fullEl.classList.add('hidden');
+        toolbarEl.classList.add('hidden');
+        fullEl.classList.remove('stage-exit');
+        toolbarEl.classList.remove('stage-exit');
+
+        updateIsolatedViewContent(partKey);
+        isoEl.classList.remove('hidden', 'stage-exit');
+        isoEl.classList.add('stage-enter-active');
+      }, 200);
+    }
+
+    function switchPartInsideModal(partKey) {
+      if (activePartKey === partKey) return;
+      activePartKey = partKey;
+      updateIsolatedViewContent(partKey);
+    }
+
+    function updateIsolatedViewContent(partKey) {
+      const bike = currentHeroBike || BIKES[0];
+      const colorObj = bike.colors[currentColorIndex] || bike.colors[0];
+      const spec = bike.specs[partKey];
+      if (!spec) return;
+
+      ['frame', 'wheel', 'drivetrain'].forEach(k => {
+        const btn = document.getElementById('tabPart-' + k);
+        if (btn) {
+          btn.style.background = k === partKey ? '#F5C518' : 'transparent';
+          btn.style.color = k === partKey ? '#21262B' : '#F1F1F1';
+          btn.style.fontWeight = k === partKey ? '700' : '500';
+        }
+      });
+
+      document.getElementById('isolatedPartSvgWrapper').innerHTML = buildIsolatedPartSvg(bike, colorObj, partKey);
+      document.getElementById('specTag').textContent = spec.tag;
+      document.getElementById('specTitle').textContent = spec.title;
+      document.getElementById('specBikeName').textContent = `${bike.name} • ${colorObj.name}`;
+      document.getElementById('specList').innerHTML = spec.items.map(([label, val]) => `
+        <div class="flex items-baseline justify-between" style="gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <span style="color:#A9A9A9;">${label}</span>
+          <span style="font-weight:600; color:#fff; text-align:right;">${val}</span>
+        </div>
+      `).join('');
+    }
+
+    function resetToFullBike(instant = false) {
+      activePartKey = null;
+      clearTimeout(stageAnimTimeout);
+
+      const fullEl = document.getElementById('fullBikeContainer');
+      const toolbarEl = document.getElementById('colorToolbar');
+      const isoEl = document.getElementById('isolatedPartContainer');
+
+      if (instant || isoEl.classList.contains('hidden')) {
+        isoEl.classList.add('hidden');
+        isoEl.classList.remove('stage-enter-active', 'stage-exit');
+        fullEl.classList.remove('hidden', 'stage-exit');
+        toolbarEl.classList.remove('hidden', 'stage-exit');
+        return;
+      }
+
+      isoEl.classList.remove('stage-enter-active');
+      isoEl.classList.add('stage-exit');
+
+      stageAnimTimeout = setTimeout(() => {
+        isoEl.classList.add('hidden');
+        isoEl.classList.remove('stage-exit');
+
+        fullEl.classList.remove('hidden', 'stage-exit');
+        toolbarEl.classList.remove('hidden', 'stage-exit');
+        fullEl.classList.add('stage-enter-active');
+        toolbarEl.classList.add('stage-enter-active');
+      }, 190);
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobileMenuDrawer').classList.toggle('hidden');
+    }
+
+    function filterCatalog(cat) {
+      if (!VALID_CATEGORIES.includes(cat)) cat = 'all';
+      activeCategoryFilter = cat;
+      try { localStorage.setItem(STORAGE_KEYS.CAT_FILTER, cat); } catch (e) {}
+
+      document.querySelectorAll('#categoryFilters .cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.classList.add('active-cat');
+        } else {
+          btn.classList.remove('active-cat');
+        }
+      });
+      renderCatalog(cat);
+    }
+
+    function renderCatalog(filter = 'all') {
+      const grid = document.getElementById('productGrid');
+      if (!grid) return;
+      let items = filter === 'all' ? BIKES : BIKES.filter(b => b.category === filter);
+      if (!items || items.length === 0) items = BIKES;
+
+      grid.innerHTML = items.map(bike => {
+        const isCurrentHero = bike.id === currentHeroBike.id;
+        const effectivePrice = Math.max(bike.price - tradeInDiscountApplied, 790);
+        const defaultColor = bike.colors[0];
+
+        return `
+          <div onclick="loadBikeToHero('${bike.id}')" class="catalog-card cursor-pointer ${isCurrentHero ? 'selected-hero-card' : ''}">
+            <div>
+              <div class="flex items-center justify-between" style="font-size:12px; color:#778899; font-weight:600; margin-bottom:4px;">
+                <span>${bike.category}</span>
+                <span>${bike.weight}</span>
+              </div>
+              <h3 style="font-size:18px; font-weight:700; color:#21262B; margin:0;">${bike.name}</h3>
+              <p style="font-size:12.5px; color:#586775; margin:6px 0 14px; line-height:1.5;">${bike.desc}</p>
+              <div style="margin: 12px 0; padding: 12px 8px; background: linear-gradient(180deg, #F5F7F9 0%, #E4E9EE 100%); border-radius: 14px; border: 1px solid rgba(119,136,153,0.2);">
+                ${buildPrecisionBikeSvg(bike, defaultColor, 'card_' + bike.id, false)}
+              </div>
+            </div>
+            <div class="flex items-center justify-between" style="padding-top:14px; border-top:1px solid rgba(169,169,169,0.3); gap:8px;" onclick="event.stopPropagation()">
+              <div style="font-size:16px; font-weight:800; color:#21262B;">${effectivePrice.toLocaleString('ru-RU')} €</div>
+              <div class="flex items-center" style="gap:8px;">
+                <button onclick="addToCart('${bike.id}')" style="padding:8px 14px; border-radius:99px; background:#EAECEF; border:none; font-size:12px; font-weight:600; color:#21262B; cursor:pointer;">В корзину</button>
+                <button onclick="openPreorderModal('${bike.name}', ${effectivePrice})" class="btn-primary" style="padding:8px 16px; font-size:12px;">Заказать</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openPreorderForCurrentHero() {
+      const effectivePrice = Math.max(currentHeroBike.price - tradeInDiscountApplied, 790);
+      openPreorderModal(currentHeroBike.name, effectivePrice);
+    }
+
+    function openPreorderModal(bikeTitle, price) {
+      document.getElementById('modalBikeTitle').textContent = `${bikeTitle} — ${price.toLocaleString('ru-RU')} €`;
+      document.getElementById('modalBikeFitNote').textContent = `Выбранный размер рамы: ${currentBikeFit.sizeLabel} (рост ${currentBikeFit.height} см)`;
+      document.getElementById('preorderModal').classList.remove('hidden');
+    }
+
+    function closePreorderModal() {
+      document.getElementById('preorderModal').classList.add('hidden');
+    }
+
+    function submitPreorder(e) {
+      e.preventDefault();
+      closePreorderModal();
+      showToast('Заказ принят');
+    }
+
+    function openTradeInModal() {
+      document.getElementById('tradeInModal').classList.remove('hidden');
+    }
+
+    function closeTradeInModal() {
+      document.getElementById('tradeInModal').classList.add('hidden');
+    }
+
+    function calcTradeIn() {
+      document.getElementById('tradeDiscountValue').textContent = '− ' + document.getElementById('tradeBikeType').value + ' €';
+    }
+
+    function applyTradeInDiscount() {
+      tradeInDiscountApplied = parseFloat(document.getElementById('tradeBikeType').value);
+      try { localStorage.setItem(STORAGE_KEYS.TRADE_IN, String(tradeInDiscountApplied)); } catch (e) {}
+      renderHeroSection();
+      renderCatalog(activeCategoryFilter);
+      closeTradeInModal();
+      showToast(`Скидка −${tradeInDiscountApplied} € применена`);
+    }
+
+    function updateCartUI() {
+      saveCartToStorage();
+      const badge = document.getElementById('cartCountBadge');
+      const totalCount = cart.reduce((acc, item) => acc + item.qty, 0);
+      if (totalCount > 0) {
+        badge.textContent = totalCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      const listEl = document.getElementById('cartItemsList');
+      if (cart.length === 0) {
+        listEl.innerHTML = `<p style="font-size:12px; color:#A9A9A9; text-align:center; padding:32px 0;">Корзина пуста</p>`;
+      } else {
+        listEl.innerHTML = cart.map(item => `
+          <div class="flex items-center justify-between" style="padding:12px; border-radius:12px; background:#181C20; border:1px solid rgba(119,136,153,0.25); margin-bottom:10px;">
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#fff;">${item.name}</div>
+              <div style="font-size:11px; color:#A9A9A9;">${item.price.toLocaleString('ru-RU')} € × ${item.qty}</div>
+            </div>
+            <div class="flex items-center" style="gap:8px;">
+              <button onclick="changeQty('${item.id}', -1)" style="width:26px; height:26px; border-radius:99px; background:#2A3138; color:#fff; border:none; font-weight:700; cursor:pointer;">−</button>
+              <span style="font-size:12px; font-weight:700; color:#fff;">${item.qty}</span>
+              <button onclick="changeQty('${item.id}', 1)" style="width:26px; height:26px; border-radius:99px; background:#2A3138; color:#fff; border:none; font-weight:700; cursor:pointer;">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+      document.getElementById('cartTotalSum').textContent = cart.reduce((acc, item) => acc + item.price * item.qty, 0).toLocaleString('ru-RU') + ' €';
+    }
+
+    function addToCart(id) {
+      const bike = BIKES.find(b => b.id === id);
+      if (!bike) return;
+      const existing = cart.find(i => i.id === id);
+      if (existing) existing.qty += 1;
+      else cart.push({ id: bike.id, name: bike.name, price: bike.price, qty: 1 });
+      updateCartUI();
+      showToast(`${bike.name} добавлен в корзину`);
+    }
+
+    function changeQty(id, delta) {
+      const idx = cart.findIndex(i => i.id === id);
+      if (idx === -1) return;
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      updateCartUI();
+    }
+
+    function toggleCartDrawer() {
+      document.getElementById('cartDrawer').classList.toggle('hidden');
+      updateCartUI();
+    }
+
+    function checkoutCart() {
+      toggleCartDrawer();
+      openPreorderModal('Заказ из корзины', cart.reduce((a, b) => a + b.price * b.qty, 0));
+    }
+
+    function toggleSearchModal() {
+      document.getElementById('searchModal').classList.toggle('hidden');
+    }
+
+    function runSearch(query) {
+      const q = query.trim().toLowerCase();
+      const box = document.getElementById('searchResults');
+      if (!q) { box.innerHTML = ''; return; }
+      box.innerHTML = BIKES.filter(b => b.name.toLowerCase().includes(q) || b.category.toLowerCase().includes(q)).map(m => `
+        <div class="flex items-center justify-between" style="padding:10px; border-radius:10px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.06);" onclick="toggleSearchModal(); loadBikeToHero('${m.id}')">
+          <div>
+            <div style="font-weight:700; color:#fff;">${m.name}</div>
+            <div style="font-size:11px; color:#A9A9A9;">${m.category} • ${m.weight}</div>
+          </div>
+          <span style="font-weight:700; color:#F5C518;">${m.price} €</span>
+        </div>
+      `).join('');
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      document.getElementById('toastText').textContent = msg;
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      }, 2500);
+    }
+
+    function calculateBikeFit(saveToStorage = false) {
+      const h = parseInt(document.getElementById('fitHeightInput').value, 10) || 178;
+      const w = parseInt(document.getElementById('fitWeightInput').value, 10) || 74;
+      document.getElementById('fitHeightVal').textContent = `${h} см`;
+      document.getElementById('fitWeightVal').textContent = `${w} кг`;
+
+      let size = 'M (54)';
+      let rangeHint = '172–180 см';
+      if (h < 165) { size = 'XS (49)'; rangeHint = '150–164 см'; }
+      else if (h < 172) { size = 'S (52)'; rangeHint = '165–171 см'; }
+      else if (h < 181) { size = 'M (54)'; rangeHint = '172–180 см'; }
+      else if (h < 189) { size = 'L (56)'; rangeHint = '181–188 см'; }
+      else { size = 'XL (58)'; rangeHint = '189–205 см'; }
+
+      const saddleCm = (h * 0.415).toFixed(1);
+      const pressureBar = (4.2 + (w - 50) * 0.032).toFixed(1);
+
+      document.getElementById('fitResultSize').textContent = size;
+      document.getElementById('fitHeightRangeHint').textContent = rangeHint;
+      document.getElementById('fitResultSaddle').textContent = `${saddleCm} см`;
+      document.getElementById('fitResultPressureBar').textContent = `${pressureBar} Бар`;
+
+      currentBikeFit = { height: h, weight: w, sizeLabel: size };
+
+      if (saveToStorage) {
+        try {
+          localStorage.setItem(STORAGE_KEYS.BIKE_FIT, JSON.stringify(currentBikeFit));
+          const ind = document.getElementById('fitSavedIndicator');
+          if (ind) ind.textContent = 'Сохранено';
+        } catch (e) {}
+      }
+    }
+
+    function openServiceModal(t) {
+      document.getElementById('serviceModalTitle').textContent = t;
+      document.getElementById('serviceModal').classList.remove('hidden');
+    }
+
+    function closeServiceModal() {
+      document.getElementById('serviceModal').classList.add('hidden');
+    }
+
+    function submitServiceBooking(e) {
+      e.preventDefault();
+      closeServiceModal();
+      showToast('Заявка отправлена');
+    }
+
+    function safeBoot() {
+      try { loadStateFromLocalStorage(); } catch (e) {}
+      try { renderHeroSection(); } catch (e) {}
+      try { renderCFDWindTunnel(); } catch (e) {}
+      try { filterCatalog(activeCategoryFilter); } catch (e) {}
+      try { updateCartUI(); } catch (e) {}
+      try { calculateBikeFit(false); } catch (e) {}
+
+      setTimeout(() => {
+        const preloader = document.getElementById('velocePreloader');
+        if (preloader) preloader.classList.add('preloader-hidden');
+      }, 850);
+    }
+
+    safeBoot();
+    window.addEventListener('DOMContentLoaded', safeBoot);
+  </script>
+</body>
+</html>
